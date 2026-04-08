@@ -1,27 +1,84 @@
-# Overview
-Follow the instruction provided on the project information page.  
+# 🧠 HealthBot – AI-Powered Patient Education System
 
-Use the starter notebook as a starting point for your project.
+An AI-driven healthcare chatbot designed to provide **accurate, accessible, and patient-friendly medical information** using Natural Language Processing (NLP).
 
-## Setup
-### Dependencies
-All dependencies needed for the project should already be installed in your workspace, but they are also at the top of the notebook in case you need to re-install for any reason.
+---
 
-### Tavily
+## 🚀 Overview
 
-Sign up for a free Tavily account, which will allow you to search the web and get back N pages and textual content for the pages, for free (first 1000 requests are free)
+HealthBot is a conversational AI system that helps users:
 
-After signing up, you can get your API key here: https://app.tavily.com/home
+- Understand symptoms  
+- Learn about medical conditions  
+- Receive simplified health explanations  
+- Access basic healthcare guidance instantly  
 
-### OpenAI
-An OpenAI key should be provided to you by Udacity.
+Unlike static health websites, this system delivers **interactive, real-time responses** in natural language.
 
-### config.env
-Create a file named `config.env` in the same directory as the starter notebook.  
+---
 
-Use this config.env to house your api keys for OpenAI and Tavily.
+## 🎯 Problem Statement
 
-``` 
-OPENAI_API_KEY="sk-Y***"
-TAVILY_API_KEY="tvly-***"
+Healthcare accessibility remains a challenge due to:
+
+- Limited access to doctors in rural/remote areas  
+- Long waiting times in hospitals  
+- Complex medical terminology  
+- Lack of reliable online health information  
+
+---
+
+## 💡 Solution
+
+HealthBot addresses these challenges by:
+
+- Providing **instant AI-based responses**  
+- Simplifying medical jargon into understandable language  
+- Acting as a **first-level virtual health assistant**  
+- Offering 24/7 availability  
+
+---
+
+## 🏗️ System Architecture
+User Input
+↓
+Text Preprocessing (NLP)
+↓
+Intent Recognition / Model Inference
+↓
+Response Generation (ML / Rule-based)
+↓
+User Output (Web Interface)
+
+
+---
+
+## ⚙️ Features
+
+- 💬 AI-powered chatbot interface  
+- 🧾 Patient-friendly explanations  
+- 🔍 Symptom-based guidance  
+- 🌐 Web-based access  
+- ⚡ Real-time responses  
+
+---
+
+## 🧪 Tech Stack
+
+| Layer        | Technology |
+|-------------|-----------|
+| Frontend     | HTML, CSS, JavaScript |
+| Backend      | Python (Flask) |
+| AI/NLP       | Machine Learning / NLP |
+| Data         | Medical datasets |
+
+---
+
+## 📂 Project Structure
+```
+HealthBot/
+│── static/ # CSS, JS, assets
+│── templates/ # HTML files
+│── app.py # Main Flask application
+│── requirements.txt # Dependencies
 ```
