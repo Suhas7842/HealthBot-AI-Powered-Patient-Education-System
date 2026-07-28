@@ -5,31 +5,31 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-teal.svg)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A production-grade **Retrieval-Augmented Generation (RAG)** system for medical education, powered by LangGraph, ChromaDB, and OpenAI. Provides accurate, evidence-based health information through interactive chat, quiz generation, and comprehensive evaluation.
+A modular, extensible **Retrieval-Augmented Generation (RAG)** system for medical education, powered by LangGraph, Pinecone, and Google Gemini. Provides accurate, evidence-based health information through interactive chat, quiz generation, and comprehensive evaluation framework.
 
 ---
 
 ## ✨ Key Features
 
 ### 🎯 Core Capabilities
-- **🔍 Hybrid RAG Retrieval** - Combines semantic search (ChromaDB) + keyword matching (BM25) with reciprocal rank fusion
-- **📚 Real Medical Data** - 500-1000 PubMed articles across 10 common conditions
-- **🤖 LangGraph Orchestration** - 12-node stateful workflow with conditional routing
+- **🔍 Hybrid RAG Retrieval** - Combines semantic search (Pinecone) + keyword matching (BM25) with reciprocal rank fusion
+- **📚 Real Medical Data** - 716 PubMed articles embedded as 2,578 chunks across 10 common conditions
+- **🤖 LangGraph Orchestration** - 13-node stateful workflow with conditional routing
 - **✅ Structured Outputs** - Type-safe Pydantic models (no string parsing)
 - **🛡️ Medical Safety** - Emergency detection with 23 critical keywords
-- **📊 Comprehensive Evaluation** - RAGAS metrics + 50-case test suite
+- **📊 Comprehensive Evaluation** - RAGAS framework integrated + 50-case test suite
 
 ### 🚀 Deployment Options
 - **💬 Streamlit UI** - Interactive chat interface with metrics dashboard
-- **🔌 FastAPI Backend** - RESTful API with auto-generated docs
+- **🔌 FastAPI Backend** - RESTful API with auto-generated docs (5 endpoints)
 - **🖥️ CLI Interface** - Terminal-based interaction
-- **☁️ Cloud-Ready** - AWS Lambda deployment configuration
+- **☁️ Cloud-Ready** - Docker production configuration with Pinecone vector DB and Gemini LLM
 
-### 📈 Performance
-- **Latency**: 5.3s mean, P95 <9s
-- **RAGAS Scores**: Faithfulness 0.84, Relevancy 0.88, Precision 0.86
-- **RAG Hit Rate**: 94%
-- **Cost**: $0.002 per query (GPT-4o-mini)
+### 📈 System Capabilities
+- **Architecture**: Stateless containers (120 MB) enabling horizontal scaling
+- **Observability**: Tracks node latencies, token usage, retrieval scores, confidence metrics
+- **Cost**: Free tier usage (Google Gemini 1,500 req/day, Pinecone 100K vectors)
+- **Data**: 2,578 medical document embeddings in cloud vector database
 
 ---
 
@@ -63,7 +63,8 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed diagrams.
 
 ### Prerequisites
 - Python 3.10+
-- OpenAI API key
+- Google Gemini API key (free tier: 1,500 requests/day)
+- Pinecone API key (free tier: 100K vectors)
 
 ### Installation
 
@@ -77,17 +78,24 @@ pip install -r requirements.txt
 
 # Configure environment
 cp .env.example config.env
-# Edit config.env and add your OPENAI_API_KEY
+# Edit config.env and add:
+#   GOOGLE_API_KEY=your_gemini_key
+#   PINECONE_API_KEY=your_pinecone_key
 ```
 
-### Build Knowledge Base (One-Time Setup)
+### Knowledge Base Setup
 
+**Option 1: Use Pre-Loaded Pinecone (Recommended)**
+- The system connects to existing Pinecone index with 2,578 embeddings
+- No local setup required - just add API keys to config.env
+
+**Option 2: Build Locally (Optional)**
 ```bash
 # Fetch PubMed articles (~30-45 minutes)
 python -m healthbot.data.loader
 
-# Build vector store (~10-15 minutes)
-python -m healthbot.retrieval.vector_store build
+# Upload to Pinecone (~5-10 minutes)
+python -m healthbot.retrieval.pinecone_store
 ```
 
 ### Run HealthBot
@@ -151,27 +159,27 @@ print(result["summary"])
 
 ## 🧪 Evaluation
 
-### Run RAGAS Evaluation
+### Test Suite
+The project includes a comprehensive evaluation framework:
+- **50 medical test cases** with ground truth answers
+- **10 conditions covered**: diabetes, hypertension, asthma, heart disease, arthritis, depression, migraine, COPD, obesity, thyroid
+- **RAGAS integration**: Faithfulness, relevancy, recall, precision metrics
+
+### Run Evaluation
 ```bash
+# Run RAGAS evaluation on test suite
 python -m healthbot.evaluation.ragas_eval
-```
 
-**Expected Scores:**
-- Faithfulness: 0.80-0.90
-- Answer Relevancy: 0.85-0.95
-- Context Recall: 0.75-0.85
-- Context Precision: 0.80-0.90
-
-### View Performance Metrics
-```bash
+# View performance metrics
 python -m healthbot.evaluation.metrics
 ```
 
 **Metrics Tracked:**
-- Latency (mean, median, P95, P99)
-- Retrieval quality (scores, hit rate)
-- Cost (tokens, USD estimates)
+- Response latency per node
+- Retrieval quality scores
+- Token usage and cost estimates
 - Per-condition performance
+- Confidence scores
 
 ---
 
@@ -188,7 +196,7 @@ healthbot/
 │   ├── prompts.py             # LLM prompts
 │   ├── models.py              # LLM wrapper (retry logic)
 │   ├── tools.py               # RAG + Tavily integration
-│   ├── nodes.py               # 12 LangGraph nodes
+│   ├── nodes.py               # 13 LangGraph nodes
 │   ├── graph.py               # Workflow orchestration
 │   ├── data/                  # PubMed loader, chunking
 │   ├── retrieval/             # Embeddings, vector store, retriever
@@ -210,39 +218,44 @@ healthbot/
 
 | Category | Technology | Purpose |
 |----------|------------|---------|
-| **Orchestration** | LangGraph | Stateful workflow |
-| **LLM** | OpenAI GPT-4o-mini | Text generation |
-| **Vector DB** | ChromaDB | Semantic search |
-| **Embeddings** | HuggingFace Transformers | 384-dim vectors |
-| **Keyword Search** | BM25 (rank-bm25) | Lexical matching |
-| **Web Search** | Tavily API | Fallback search |
-| **Data Source** | PubMed (Biopython) | Medical articles |
-| **API Framework** | FastAPI | RESTful backend |
-| **UI Framework** | Streamlit | Interactive interface |
-| **Evaluation** | RAGAS | RAG quality metrics |
-| **Config** | Pydantic Settings | Type-safe config |
+| **Orchestration** | LangGraph | Stateful workflow with 13 nodes |
+| **LLM** | Google Gemini Flash | Text generation with structured outputs |
+| **Vector DB** | Pinecone | Cloud-native semantic search (2,578 vectors) |
+| **Embeddings** | HuggingFace Transformers | 384-dim sentence embeddings |
+| **Keyword Search** | BM25Okapi (rank-bm25) | Lexical matching for hybrid RAG |
+| **Fusion** | Reciprocal Rank Fusion | Combines semantic + BM25 results |
+| **Web Search** | Tavily API | Fallback for rare conditions |
+| **Data Source** | PubMed (716 articles) | Medical literature via Biopython |
+| **API Framework** | FastAPI | RESTful backend (5 endpoints) |
+| **UI Framework** | Streamlit | Interactive chat interface |
+| **Evaluation** | RAGAS | RAG quality metrics framework |
+| **Config** | Pydantic Settings | Type-safe configuration |
 
 ---
 
-## 📊 Performance Benchmarks
+## 📊 System Specifications
 
-| Metric | Value |
-|--------|-------|
-| **Latency** | |
-| Mean Response Time | 5.32s |
-| P95 Latency | 8.71s |
-| P99 Latency | 11.23s |
-| **Quality (RAGAS)** | |
-| Faithfulness | 0.842 |
-| Answer Relevancy | 0.879 |
-| Context Recall | 0.801 |
-| Context Precision | 0.856 |
-| **Retrieval** | |
-| RAG Hit Rate | 94.5% |
-| Mean Relevance Score | 0.783 |
-| **Cost** | |
-| Per Query | $0.002 |
-| Per 1000 Queries | $2.00 |
+| Component | Details |
+|-----------|---------|
+| **Medical Knowledge Base** | |
+| PubMed Articles | 716 articles |
+| Vector Embeddings | 2,578 chunks (384-dim) |
+| Conditions Covered | 10 common health conditions |
+| **LangGraph Workflow** | |
+| Total Nodes | 13 nodes with conditional routing |
+| State Fields Tracked | 14 (messages, retrieval, metrics, safety) |
+| **Hybrid RAG Pipeline** | |
+| Semantic Search | Pinecone vector similarity |
+| Keyword Search | BM25Okapi algorithm |
+| Fusion Method | Reciprocal Rank Fusion |
+| **Evaluation Framework** | |
+| Test Cases | 50 medical questions with ground truth |
+| RAGAS Metrics | Faithfulness, relevancy, recall, precision |
+| Observability | Per-node latency, token usage, confidence scores |
+| **Deployment** | |
+| Container Size | 120 MB (stateless) |
+| Cloud Services | Pinecone + Gemini (free tier) |
+| Scaling | Horizontal (1-1000 instances) |
 
 ---
 
@@ -292,54 +305,56 @@ visualize_graph("docs/workflow_graph.png")
 
 ---
 
-## 📈 Evaluation Results
+## 📈 Evaluation Framework
 
 ### Test Suite Coverage
-- **Total Cases**: 50
-- **Conditions**: 10 (diabetes, hypertension, asthma, heart disease, depression, arthritis, migraine, COVID-19, obesity, stroke)
-- **Cases per Condition**: 5
+- **Total Cases**: 50 medical questions with ground truth answers
+- **Conditions**: 10 (diabetes, hypertension, asthma, heart disease, arthritis, depression, migraine, COPD, obesity, thyroid)
+- **Cases per Condition**: 5 carefully curated questions
 
-### Sample Results
-```
-RAGAS Scores:
-  • Faithfulness: 0.842
-  • Answer Relevancy: 0.879
-  • Context Recall: 0.801
-  • Context Precision: 0.856
+### RAGAS Integration
+The system includes RAGAS evaluation framework for measuring:
+- **Faithfulness**: Answer accuracy vs source documents
+- **Answer Relevancy**: How well answer addresses the question
+- **Context Recall**: Retrieval completeness
+- **Context Precision**: Retrieval accuracy
 
-Average Score: 0.845
+Run evaluation to generate metrics:
+```bash
+python -m healthbot.evaluation.ragas_eval
 ```
 
 ---
 
 ## 🚀 Deployment
 
-### Docker
-```dockerfile
-FROM python:3.10-slim
-WORKDIR /app
-COPY . .
-RUN pip install --no-cache-dir -r requirements.txt
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
-```
+### Docker Production Deployment
 
 ```bash
-docker build -t healthbot .
-docker run -p 8000:8000 --env-file config.env healthbot
+# Build optimized production container (120 MB)
+docker build -f Dockerfile.production -t healthbot:prod .
+
+# Run single instance
+docker run -p 8000:8000 --env-file config.env healthbot:prod
+
+# Run with load balancing (3 replicas)
+docker-compose -f docker-compose.production.yml up --scale api=3
 ```
 
-### AWS Lambda
-See `deployment/` directory for serverless configuration.
+### Cloud Deployment
+- **Railway**: Deploy directly from GitHub (see DEPLOY.md)
+- **AWS ECS**: Stateless containers with auto-scaling
+- **Google Cloud Run**: Serverless container deployment
+
+See [DEPLOY.md](DEPLOY.md) for complete deployment guide.
 
 ---
 
 ## 📖 Documentation
 
-- **[Architecture](docs/ARCHITECTURE.md)** - System design and diagrams
-- **[Implementation Guide](docs/IMPLEMENTATION_GUIDE.md)** - Full development plan
-- **[Day 2 Complete](docs/DAY2_COMPLETE.md)** - RAG pipeline details
-- **[Day 3 Complete](docs/DAY3_COMPLETE.md)** - LangGraph integration
-- **[Day 4 Complete](docs/DAY4_COMPLETE.md)** - Evaluation + API
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and technical diagrams
+- **[Deployment Guide](DEPLOY.md)** - Production deployment instructions
+- **[Code Audit Summary](CODE_AUDIT_SUMMARY.md)** - Implementation verification report
 
 ---
 
@@ -362,20 +377,20 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- **PubMed** - Medical article data
-- **LangChain/LangGraph** - Workflow orchestration
-- **ChromaDB** - Vector database
-- **OpenAI** - Language models
-- **RAGAS** - Evaluation framework
+- **PubMed/NCBI** - Medical literature data
+- **LangChain/LangGraph** - Workflow orchestration framework
+- **Pinecone** - Cloud vector database
+- **Google** - Gemini LLM with structured outputs
+- **RAGAS** - RAG evaluation framework
+- **Tavily** - Real-time web search API
 
 ---
 
 ## 📬 Contact
 
-**Author**: Suhas Kumar Regeti
+**Author**: Suhas
 - Email: rsuhaskumar3@gmail.com
-- LinkedIn: [linkedin.com/in/yourprofile](https://linkedin.com)
-- GitHub: [github.com/yourusername](https://github.com)
+- GitHub: [github.com/Suhas7842](https://github.com/Suhas7842)
 
 ---
 
@@ -385,4 +400,4 @@ HealthBot is an educational tool only. It is NOT a substitute for professional m
 
 ---
 
-**Built with ❤️ using LangGraph, ChromaDB, and OpenAI | v2.0.0**
+**Built with ❤️ using LangGraph, Pinecone, and Google Gemini | v2.0.0**
