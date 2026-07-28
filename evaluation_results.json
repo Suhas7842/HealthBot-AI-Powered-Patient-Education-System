@@ -1,124 +1,419 @@
 {
   "summary": {
-    "total_cases": 10,
-    "avg_latency_seconds": 0.41777949333190917,
-    "min_latency_seconds": 0.27994227409362793,
-    "max_latency_seconds": 1.4519891738891602,
-    "avg_rrf_score": 0.017969712516539102,
+    "total_cases": 50,
+    "avg_latency_seconds": 0.3180931901931763,
+    "min_latency_seconds": 0.24266862869262695,
+    "max_latency_seconds": 1.6135056018829346,
+    "avg_rrf_score": 0.02006041088369328,
     "retrieval_success_rate": 1.0,
     "method_distribution": {
-      "bm25+semantic": 6,
-      "semantic": 27,
-      "bm25": 17
+      "bm25+semantic": 64,
+      "semantic": 109,
+      "bm25": 77
     }
   },
   "by_condition": {
-    "stroke": {
-      "count": 1,
-      "avg_latency": 1.4519891738891602,
-      "avg_rrf_score": 0.019258989952406137
-    },
-    "heart disease": {
-      "count": 3,
-      "avg_latency": 0.3151702086130778,
-      "avg_rrf_score": 0.018191443368555202
-    },
-    "covid-19": {
-      "count": 2,
-      "avg_latency": 0.3102017641067505,
-      "avg_rrf_score": 0.01618359312700931
-    },
-    "obesity": {
-      "count": 1,
-      "avg_latency": 0.2974839210510254,
-      "avg_rrf_score": 0.01618359312700931
+    "depression": {
+      "count": 5,
+      "avg_latency": 0.4143969058990479,
+      "avg_rrf_score": 0.018624956423211318
     },
     "hypertension": {
-      "count": 1,
-      "avg_latency": 0.2906491756439209,
-      "avg_rrf_score": 0.01618359312700931
+      "count": 5,
+      "avg_latency": 0.2807743072509766,
+      "avg_rrf_score": 0.018521439853935305
+    },
+    "stroke": {
+      "count": 5,
+      "avg_latency": 0.5659862995147705,
+      "avg_rrf_score": 0.022185647090380407
+    },
+    "arthritis": {
+      "count": 5,
+      "avg_latency": 0.2749826908111572,
+      "avg_rrf_score": 0.018453506220451815
+    },
+    "heart disease": {
+      "count": 5,
+      "avg_latency": 0.2870291233062744,
+      "avg_rrf_score": 0.020448314363664354
     },
     "asthma": {
-      "count": 1,
-      "avg_latency": 0.29181623458862305,
-      "avg_rrf_score": 0.021820839472272733
+      "count": 5,
+      "avg_latency": 0.2643133640289307,
+      "avg_rrf_score": 0.01789927769017964
     },
-    "depression": {
-      "count": 1,
-      "avg_latency": 0.27994227409362793,
-      "avg_rrf_score": 0.01930859312700931
+    "migraine": {
+      "count": 5,
+      "avg_latency": 0.2806983470916748,
+      "avg_rrf_score": 0.020303108810156695
+    },
+    "obesity": {
+      "count": 5,
+      "avg_latency": 0.26904006004333497,
+      "avg_rrf_score": 0.017957078640617737
+    },
+    "covid-19": {
+      "count": 5,
+      "avg_latency": 0.27713403701782224,
+      "avg_rrf_score": 0.01857092613775663
+    },
+    "diabetes": {
+      "count": 5,
+      "avg_latency": 0.26657676696777344,
+      "avg_rrf_score": 0.027639853606578908
     }
   },
   "detailed_results": [
     {
+      "question": "How is depression treated?",
+      "condition": "depression",
+      "num_retrieved": 5,
+      "latency_seconds": 1.0372660160064697,
+      "avg_rrf_score": 0.01930859312700931
+    },
+    {
+      "question": "How can hypertension be prevented?",
+      "condition": "hypertension",
+      "num_retrieved": 5,
+      "latency_seconds": 0.35184502601623535,
+      "avg_rrf_score": 0.02190850915553065
+    },
+    {
       "question": "What are the risk factors for stroke?",
       "condition": "stroke",
       "num_retrieved": 5,
-      "latency_seconds": 1.4519891738891602,
+      "latency_seconds": 1.6135056018829346,
       "avg_rrf_score": 0.019258989952406137
     },
     {
-      "question": "What tests diagnose heart disease?",
+      "question": "What treatments are available for arthritis?",
+      "condition": "arthritis",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2941727638244629,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What are the warning signs of a heart attack?",
       "condition": "heart disease",
       "num_retrieved": 5,
-      "latency_seconds": 0.3013277053833008,
+      "latency_seconds": 0.3545827865600586,
+      "avg_rrf_score": 0.019358196301612486
+    },
+    {
+      "question": "Can depression be prevented?",
+      "condition": "depression",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2547736167907715,
+      "avg_rrf_score": 0.01930859312700931
+    },
+    {
+      "question": "What is an asthma action plan?",
+      "condition": "asthma",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2515296936035156,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What are the phases of a migraine attack?",
+      "condition": "migraine",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2984604835510254,
+      "avg_rrf_score": 0.02474682639132953
+    },
+    {
+      "question": "What are the warning signs of stroke (FAST)?",
+      "condition": "stroke",
+      "num_retrieved": 5,
+      "latency_seconds": 0.3862936496734619,
+      "avg_rrf_score": 0.025197923496838397
+    },
+    {
+      "question": "Why is gradual weight loss recommended?",
+      "condition": "obesity",
+      "num_retrieved": 5,
+      "latency_seconds": 0.27532339096069336,
+      "avg_rrf_score": 0.02505102069505145
+    },
+    {
+      "question": "How is COVID-19 transmitted?",
+      "condition": "covid-19",
+      "num_retrieved": 5,
+      "latency_seconds": 0.26058101654052734,
+      "avg_rrf_score": 0.024995258180745914
+    },
+    {
+      "question": "What are common symptoms of arthritis?",
+      "condition": "arthritis",
+      "num_retrieved": 5,
+      "latency_seconds": 0.25534701347351074,
       "avg_rrf_score": 0.01618359312700931
     },
     {
       "question": "What is long COVID?",
       "condition": "covid-19",
       "num_retrieved": 5,
-      "latency_seconds": 0.29981231689453125,
+      "latency_seconds": 0.2824244499206543,
       "avg_rrf_score": 0.01618359312700931
     },
     {
-      "question": "What are evidence-based treatments for obesity?",
+      "question": "What triggers migraines?",
+      "condition": "migraine",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2811119556427002,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What causes depression?",
+      "condition": "depression",
+      "num_retrieved": 5,
+      "latency_seconds": 0.248366117477417,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What are the symptoms of major depression?",
+      "condition": "depression",
+      "num_retrieved": 5,
+      "latency_seconds": 0.28331780433654785,
+      "avg_rrf_score": 0.02214040960801934
+    },
+    {
+      "question": "How are migraines treated?",
+      "condition": "migraine",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2670145034790039,
+      "avg_rrf_score": 0.01916866775387498
+    },
+    {
+      "question": "What health conditions are associated with obesity?",
       "condition": "obesity",
       "num_retrieved": 5,
-      "latency_seconds": 0.2974839210510254,
-      "avg_rrf_score": 0.01618359312700931
-    },
-    {
-      "question": "Who is at higher risk for severe COVID-19?",
-      "condition": "covid-19",
-      "num_retrieved": 5,
-      "latency_seconds": 0.3205912113189697,
-      "avg_rrf_score": 0.01618359312700931
-    },
-    {
-      "question": "What is coronary artery disease?",
-      "condition": "heart disease",
-      "num_retrieved": 5,
-      "latency_seconds": 0.34907007217407227,
+      "latency_seconds": 0.2483048439025879,
       "avg_rrf_score": 0.01618359312700931
     },
     {
       "question": "What are complications of untreated hypertension?",
       "condition": "hypertension",
       "num_retrieved": 5,
-      "latency_seconds": 0.2906491756439209,
+      "latency_seconds": 0.25025343894958496,
       "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What is the difference between osteoarthritis and rheumatoid arthritis?",
+      "condition": "arthritis",
+      "num_retrieved": 5,
+      "latency_seconds": 0.28952574729919434,
+      "avg_rrf_score": 0.02482540882764854
+    },
+    {
+      "question": "What are the symptoms of hypertension?",
+      "condition": "hypertension",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2470836639404297,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What causes obesity?",
+      "condition": "obesity",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2430131435394287,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What are the main symptoms of asthma?",
+      "condition": "asthma",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2826564311981201,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What lifestyle changes help manage arthritis?",
+      "condition": "arthritis",
+      "num_retrieved": 5,
+      "latency_seconds": 0.24941563606262207,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "Why is immediate treatment critical for stroke?",
+      "condition": "stroke",
+      "num_retrieved": 5,
+      "latency_seconds": 0.28148841857910156,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What are evidence-based treatments for obesity?",
+      "condition": "obesity",
+      "num_retrieved": 5,
+      "latency_seconds": 0.28205180168151855,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What triggers asthma attacks?",
+      "condition": "asthma",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2426776885986328,
+      "avg_rrf_score": 0.019124769597597544
+    },
+    {
+      "question": "What is migraine with aura?",
+      "condition": "migraine",
+      "num_retrieved": 5,
+      "latency_seconds": 0.26098012924194336,
+      "avg_rrf_score": 0.025232863651560338
+    },
+    {
+      "question": "Who is at higher risk for severe COVID-19?",
+      "condition": "covid-19",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2504894733428955,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What is a TIA (transient ischemic attack)?",
+      "condition": "stroke",
+      "num_retrieved": 5,
+      "latency_seconds": 0.259533166885376,
+      "avg_rrf_score": 0.024919986564489703
+    },
+    {
+      "question": "When should someone seek emergency care for a headache?",
+      "condition": "migraine",
+      "num_retrieved": 5,
+      "latency_seconds": 0.29592466354370117,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "When should someone seek help for depression?",
+      "condition": "depression",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2482609748840332,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "How is diabetes diagnosed?",
+      "condition": "diabetes",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2949061393737793,
+      "avg_rrf_score": 0.025373573958781186
+    },
+    {
+      "question": "What are risk factors for heart disease?",
+      "condition": "heart disease",
+      "num_retrieved": 5,
+      "latency_seconds": 0.25629353523254395,
+      "avg_rrf_score": 0.028309045411043683
     },
     {
       "question": "What are long-term asthma control medications?",
       "condition": "asthma",
       "num_retrieved": 5,
-      "latency_seconds": 0.29181623458862305,
+      "latency_seconds": 0.2999918460845947,
       "avg_rrf_score": 0.021820839472272733
+    },
+    {
+      "question": "How can COVID-19 be prevented?",
+      "condition": "covid-19",
+      "num_retrieved": 5,
+      "latency_seconds": 0.29808783531188965,
+      "avg_rrf_score": 0.01930859312700931
     },
     {
       "question": "How is heart disease prevented?",
       "condition": "heart disease",
       "num_retrieved": 5,
-      "latency_seconds": 0.29511284828186035,
+      "latency_seconds": 0.30319690704345703,
       "avg_rrf_score": 0.02220714385164699
     },
     {
-      "question": "How is depression treated?",
-      "condition": "depression",
+      "question": "What is coronary artery disease?",
+      "condition": "heart disease",
       "num_retrieved": 5,
-      "latency_seconds": 0.27994227409362793,
-      "avg_rrf_score": 0.01930859312700931
+      "latency_seconds": 0.24426603317260742,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "How is arthritis diagnosed?",
+      "condition": "arthritis",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2864522933959961,
+      "avg_rrf_score": 0.018891342893582606
+    },
+    {
+      "question": "What causes Type 1 diabetes?",
+      "condition": "diabetes",
+      "num_retrieved": 5,
+      "latency_seconds": 0.24266862869262695,
+      "avg_rrf_score": 0.03147184206445179
+    },
+    {
+      "question": "What are the main symptoms of Type 2 diabetes?",
+      "condition": "diabetes",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2484753131866455,
+      "avg_rrf_score": 0.031075918543528275
+    },
+    {
+      "question": "What causes high blood pressure?",
+      "condition": "hypertension",
+      "num_retrieved": 5,
+      "latency_seconds": 0.24527668952941895,
+      "avg_rrf_score": 0.01916283610625229
+    },
+    {
+      "question": "How is asthma diagnosed?",
+      "condition": "asthma",
+      "num_retrieved": 5,
+      "latency_seconds": 0.24471116065979004,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "How is obesity defined medically?",
+      "condition": "obesity",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2965071201324463,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What are the most common symptoms of COVID-19?",
+      "condition": "covid-19",
+      "num_retrieved": 5,
+      "latency_seconds": 0.29408740997314453,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What are the risk factors for Type 2 diabetes?",
+      "condition": "diabetes",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2512686252593994,
+      "avg_rrf_score": 0.028441539034148765
+    },
+    {
+      "question": "What lifestyle changes help manage Type 2 diabetes?",
+      "condition": "diabetes",
+      "num_retrieved": 5,
+      "latency_seconds": 0.295565128326416,
+      "avg_rrf_score": 0.021836394431984527
+    },
+    {
+      "question": "What is the difference between ischemic and hemorrhagic stroke?",
+      "condition": "stroke",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2891106605529785,
+      "avg_rrf_score": 0.025367742311158493
+    },
+    {
+      "question": "What tests diagnose heart disease?",
+      "condition": "heart disease",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2768063545227051,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What is considered high blood pressure?",
+      "condition": "hypertension",
+      "num_retrieved": 5,
+      "latency_seconds": 0.30941271781921387,
+      "avg_rrf_score": 0.01916866775387498
     }
   ]
 }

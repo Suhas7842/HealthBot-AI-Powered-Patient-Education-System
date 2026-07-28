@@ -26,8 +26,9 @@ A modular, extensible **Retrieval-Augmented Generation (RAG)** system for medica
 - **☁️ Cloud-Ready** - Docker production configuration with Pinecone vector DB and Gemini LLM
 
 ### 📈 Measured Performance
-- **Retrieval Success**: 100% (verified on 10-case medical test suite)
-- **Average Latency**: 418ms per query (hybrid semantic + BM25 retrieval)
+- **Retrieval Success**: 100% (verified on full 50-case medical test suite)
+- **Average Latency**: 318ms per query (hybrid semantic + BM25 retrieval)
+- **Method Distribution**: 44% semantic, 31% BM25, 26% hybrid overlap
 - **Architecture**: Stateless containers (120 MB) enabling horizontal scaling
 - **Observability**: Tracks node latencies, token usage, retrieval scores, confidence metrics
 - **Data**: 2,578 medical document embeddings in cloud vector database (Pinecone)
@@ -173,12 +174,15 @@ python -m healthbot.evaluation.simple_eval
 python -m healthbot.evaluation.ragas_eval
 ```
 
-### Latest Results (10-Case Sample)
-- **Success Rate**: 100% (10/10 queries retrieved relevant documents)
-- **Avg Latency**: 0.418s (418ms)
-- **Min/Max**: 0.280s - 1.452s (first query includes cold start)
-- **Method Distribution**: 54% semantic, 34% BM25, 12% hybrid
-- **Conditions Tested**: Heart disease, COVID-19, stroke, asthma, obesity, hypertension, depression
+### Latest Results (Full 50-Case Evaluation)
+- **Success Rate**: 100% (50/50 queries retrieved relevant documents)
+- **Avg Latency**: 0.318s (318ms) - production-grade performance
+- **Min/Max**: 0.243s - 1.614s (typical range 250-300ms)
+- **Method Distribution**: 44% semantic, 31% BM25, 26% hybrid (both methods)
+- **Conditions Tested**: All 10 conditions (diabetes, hypertension, asthma, heart disease, arthritis, depression, migraine, COPD, obesity, stroke)
+- **Statistical Confidence**: 5 cases per condition, robust performance baseline
+
+See [EVALUATION_REPORT_50_CASE.md](EVALUATION_REPORT_50_CASE.md) for comprehensive analysis.
 
 **Metrics Tracked:**
 - Retrieval latency and success rate

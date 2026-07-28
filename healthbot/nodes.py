@@ -60,40 +60,60 @@ def collect_patient_topic(state: PatientState) -> dict:
 @log_node_execution("check_safety")
 def check_safety_node(state: PatientState) -> dict:
     """
-    Check if query contains emergency keywords.
+    Check if query contains emergency keywords and route appropriately.
+
+    Scans topic for 23 emergency keywords like "chest pain", "stroke",
+    "suicidal thoughts" and triggers immediate emergency exit if detected.
 
     Args:
-        state: Current workflow state
+        state: Current workflow state with topic field
 
     Returns:
-        Updated state with emergency detection result
+        Updated state with:
+        - emergency_detected: bool (True if emergency keywords found)
+        - summary: emergency message (if emergency)
+        - messages: updated with emergency response (if emergency)
     """
     topic = state.get("topic", "")
+
+    # Check against 23 emergency keywords (see safety.py)
     is_emergency = check_emergency(topic)
 
     if is_emergency:
         logger.warning(f"Emergency detected in query: '{topic}'")
+
+        # Get emergency message directing to immediate medical care
         emergency_message = get_emergency_response()
 
+        # Set emergency flag and add response to conversation
         return {
             "emergency_detected": True,
             "messages": state["messages"] + [AIMessage(content=emergency_message)],
             "summary": emergency_message,
         }
 
+    # Normal query - proceed to retrieval
     return {"emergency_detected": False}
 
 
 @log_node_execution("retrieve_knowledge")
 def retrieve_medical_knowledge(state: PatientState) -> dict:
     """
-    Retrieve relevant medical information using RAG or Tavily.
+    Retrieve relevant medical information using hybrid RAG or web search fallback.
+
+    Uses hybrid retrieval (semantic + BM25 + RRF) for known medical conditions
+    covered in the 716-article PubMed knowledge base. Falls back to Tavily web
+    search for rare conditions not in the knowledge base.
 
     Args:
-        state: Current workflow state
+        state: Current workflow state with topic field
 
     Returns:
-        Updated state with retrieved documents and context
+        Updated state with:
+        - retrieved_docs: list of document dicts (text, metadata)
+        - retrieval_scores: list of RRF scores
+        - rag_context: formatted string for LLM consumption
+        - tool_calls: incremented counter
     """
     topic = state.get("topic", "")
 

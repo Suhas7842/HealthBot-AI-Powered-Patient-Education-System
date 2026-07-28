@@ -58,14 +58,17 @@ class RAGTool:
 
     def search(self, query: str, k: int = 5) -> dict:
         """
-        Search medical knowledge base.
+        Search medical knowledge base using hybrid retrieval.
 
         Args:
-            query: Search query
-            k: Number of results to return
+            query: Medical question or search query
+            k: Number of results to return (default 5)
 
         Returns:
-            Dictionary with results and metadata
+            Dictionary with:
+            - success: bool (whether search completed)
+            - documents: list of retrieved documents with text and metadata
+            - error: str (if search failed)
         """
         if not self.available:
             return {
