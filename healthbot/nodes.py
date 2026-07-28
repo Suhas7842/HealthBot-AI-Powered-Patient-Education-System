@@ -3,7 +3,6 @@ LangGraph node functions for HealthBot workflow.
 Each node performs a specific step in the patient education pipeline.
 """
 
-import time
 from typing import Dict
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from healthbot.state import PatientState
@@ -18,8 +17,7 @@ from healthbot.prompts import (
 )
 from healthbot.safety import (
     check_emergency,
-    get_emergency_response,
-    format_with_disclaimer
+    get_emergency_response
 )
 from healthbot.logger import log_node_execution, logger
 

@@ -3,7 +3,7 @@ Tools integration for HealthBot: RAG retrieval and Tavily search.
 Provides fallback mechanisms for comprehensive medical information.
 """
 
-from typing import List, Dict, Optional
+from typing import Dict
 from langchain_community.tools.tavily_search import TavilySearchResults
 from healthbot.retrieval.retriever import HybridRetriever
 from healthbot.config import settings

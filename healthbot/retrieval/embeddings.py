@@ -24,7 +24,7 @@ class EmbeddingManager:
 
         try:
             self.model = SentenceTransformer(self.model_name)
-            logger.info(f"Embedding model loaded successfully")
+            logger.info("Embedding model loaded successfully")
         except Exception as e:
             logger.error(f"Failed to load embedding model: {e}")
             raise

@@ -238,7 +238,7 @@ def main():
 
     try:
         summary = wrapper.invoke_structured(messages, MedicalSummary)
-        print(f"Structured output generated:")
+        print("Structured output generated:")
         print(f"  Title: {summary.title}")
         print(f"  Causes: {', '.join(summary.causes)}")
         print(f"  Symptoms: {', '.join(summary.symptoms)}")
