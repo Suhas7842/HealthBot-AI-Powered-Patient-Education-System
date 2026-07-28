@@ -49,6 +49,7 @@ chroma_db/
 # Logs
 *.log
 logs/
+metrics_log.jsonl
 
 # OS
 .DS_Store
