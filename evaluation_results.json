@@ -1,0 +1,124 @@
+{
+  "summary": {
+    "total_cases": 10,
+    "avg_latency_seconds": 0.41777949333190917,
+    "min_latency_seconds": 0.27994227409362793,
+    "max_latency_seconds": 1.4519891738891602,
+    "avg_rrf_score": 0.017969712516539102,
+    "retrieval_success_rate": 1.0,
+    "method_distribution": {
+      "bm25+semantic": 6,
+      "semantic": 27,
+      "bm25": 17
+    }
+  },
+  "by_condition": {
+    "stroke": {
+      "count": 1,
+      "avg_latency": 1.4519891738891602,
+      "avg_rrf_score": 0.019258989952406137
+    },
+    "heart disease": {
+      "count": 3,
+      "avg_latency": 0.3151702086130778,
+      "avg_rrf_score": 0.018191443368555202
+    },
+    "covid-19": {
+      "count": 2,
+      "avg_latency": 0.3102017641067505,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    "obesity": {
+      "count": 1,
+      "avg_latency": 0.2974839210510254,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    "hypertension": {
+      "count": 1,
+      "avg_latency": 0.2906491756439209,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    "asthma": {
+      "count": 1,
+      "avg_latency": 0.29181623458862305,
+      "avg_rrf_score": 0.021820839472272733
+    },
+    "depression": {
+      "count": 1,
+      "avg_latency": 0.27994227409362793,
+      "avg_rrf_score": 0.01930859312700931
+    }
+  },
+  "detailed_results": [
+    {
+      "question": "What are the risk factors for stroke?",
+      "condition": "stroke",
+      "num_retrieved": 5,
+      "latency_seconds": 1.4519891738891602,
+      "avg_rrf_score": 0.019258989952406137
+    },
+    {
+      "question": "What tests diagnose heart disease?",
+      "condition": "heart disease",
+      "num_retrieved": 5,
+      "latency_seconds": 0.3013277053833008,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What is long COVID?",
+      "condition": "covid-19",
+      "num_retrieved": 5,
+      "latency_seconds": 0.29981231689453125,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What are evidence-based treatments for obesity?",
+      "condition": "obesity",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2974839210510254,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "Who is at higher risk for severe COVID-19?",
+      "condition": "covid-19",
+      "num_retrieved": 5,
+      "latency_seconds": 0.3205912113189697,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What is coronary artery disease?",
+      "condition": "heart disease",
+      "num_retrieved": 5,
+      "latency_seconds": 0.34907007217407227,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What are complications of untreated hypertension?",
+      "condition": "hypertension",
+      "num_retrieved": 5,
+      "latency_seconds": 0.2906491756439209,
+      "avg_rrf_score": 0.01618359312700931
+    },
+    {
+      "question": "What are long-term asthma control medications?",
+      "condition": "asthma",
+      "num_retrieved": 5,
+      "latency_seconds": 0.29181623458862305,
+      "avg_rrf_score": 0.021820839472272733
+    },
+    {
+      "question": "How is heart disease prevented?",
+      "condition": "heart disease",
+      "num_retrieved": 5,
+      "latency_seconds": 0.29511284828186035,
+      "avg_rrf_score": 0.02220714385164699
+    },
+    {
+      "question": "How is depression treated?",
+      "condition": "depression",
+      "num_retrieved": 5,
+      "latency_seconds": 0.27994227409362793,
+      "avg_rrf_score": 0.01930859312700931
+    }
+  ]
+}

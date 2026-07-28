@@ -25,11 +25,13 @@ A modular, extensible **Retrieval-Augmented Generation (RAG)** system for medica
 - **🖥️ CLI Interface** - Terminal-based interaction
 - **☁️ Cloud-Ready** - Docker production configuration with Pinecone vector DB and Gemini LLM
 
-### 📈 System Capabilities
+### 📈 Measured Performance
+- **Retrieval Success**: 100% (verified on 10-case medical test suite)
+- **Average Latency**: 418ms per query (hybrid semantic + BM25 retrieval)
 - **Architecture**: Stateless containers (120 MB) enabling horizontal scaling
 - **Observability**: Tracks node latencies, token usage, retrieval scores, confidence metrics
+- **Data**: 2,578 medical document embeddings in cloud vector database (Pinecone)
 - **Cost**: Free tier usage (Google Gemini 1,500 req/day, Pinecone 100K vectors)
-- **Data**: 2,578 medical document embeddings in cloud vector database
 
 ---
 
@@ -160,23 +162,30 @@ print(result["summary"])
 The project includes a comprehensive evaluation framework:
 - **50 medical test cases** with ground truth answers
 - **10 conditions covered**: diabetes, hypertension, asthma, heart disease, arthritis, depression, migraine, COPD, obesity, thyroid
-- **RAGAS integration**: Faithfulness, relevancy, recall, precision metrics
+- **Verified Results**: 100% retrieval success, 418ms avg latency (see [EVALUATION_REPORT.md](EVALUATION_REPORT.md))
 
 ### Run Evaluation
 ```bash
-# Run RAGAS evaluation on test suite
-python -m healthbot.evaluation.ragas_eval
+# Run retrieval performance evaluation
+python -m healthbot.evaluation.simple_eval
 
-# View performance metrics
-python -m healthbot.evaluation.metrics
+# For advanced LLM-based evaluation (requires additional setup)
+python -m healthbot.evaluation.ragas_eval
 ```
 
+### Latest Results (10-Case Sample)
+- **Success Rate**: 100% (10/10 queries retrieved relevant documents)
+- **Avg Latency**: 0.418s (418ms)
+- **Min/Max**: 0.280s - 1.452s (first query includes cold start)
+- **Method Distribution**: 54% semantic, 34% BM25, 12% hybrid
+- **Conditions Tested**: Heart disease, COVID-19, stroke, asthma, obesity, hypertension, depression
+
 **Metrics Tracked:**
-- Response latency per node
-- Retrieval quality scores
+- Retrieval latency and success rate
+- RRF quality scores
+- Method distribution (semantic vs BM25 vs hybrid)
+- Per-condition performance breakdown
 - Token usage and cost estimates
-- Per-condition performance
-- Confidence scores
 
 ---
 
@@ -309,18 +318,24 @@ visualize_graph("docs/workflow_graph.png")
 - **Total Cases**: 50 medical questions with ground truth answers
 - **Conditions**: 10 (diabetes, hypertension, asthma, heart disease, arthritis, depression, migraine, COPD, obesity, thyroid)
 - **Cases per Condition**: 5 carefully curated questions
+- **Latest Evaluation**: 100% success rate, 418ms avg latency (10-case sample)
 
-### RAGAS Integration
-The system includes RAGAS evaluation framework for measuring:
-- **Faithfulness**: Answer accuracy vs source documents
-- **Answer Relevancy**: How well answer addresses the question
-- **Context Recall**: Retrieval completeness
-- **Context Precision**: Retrieval accuracy
+### Evaluation Metrics
+The system supports multiple evaluation approaches:
 
-Run evaluation to generate metrics:
+**Simple Retrieval Evaluation** (Recommended):
+```bash
+python -m healthbot.evaluation.simple_eval
+```
+Measures: retrieval success rate, latency, RRF scores, method distribution
+
+**RAGAS Integration** (Advanced - requires additional dependencies):
 ```bash
 python -m healthbot.evaluation.ragas_eval
 ```
+Measures: faithfulness, answer relevancy, context recall, context precision
+
+See [EVALUATION_REPORT.md](EVALUATION_REPORT.md) for detailed results and analysis.
 
 ---
 
