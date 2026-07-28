@@ -64,6 +64,7 @@ st.markdown(
         padding: 1rem;
         margin: 1rem 0;
         border-radius: 4px;
+        color: #856404;
     }
     .emergency-box {
         background-color: #f8d7da;
@@ -134,25 +135,6 @@ with st.sidebar:
 
     st.divider()
 
-    # System status
-    st.subheader("🔧 System Status")
-    tool_selector = st.session_state.tool_selector
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if tool_selector.rag_tool.available:
-            st.success("✅ RAG")
-        else:
-            st.error("❌ RAG")
-
-    with col2:
-        if tool_selector.tavily_tool.available:
-            st.success("✅ Tavily")
-        else:
-            st.warning("⚠️ Tavily")
-
-    st.divider()
-
     # About
     with st.expander("ℹ️ About HealthBot"):
         st.write("""
@@ -176,23 +158,29 @@ with tab1:
     st.markdown(
         f"""
     <div class="warning-box">
-        ⚠️ <strong>Medical Disclaimer:</strong> {MEDICAL_DISCLAIMER.strip()}
+        <strong>⚠️ MEDICAL DISCLAIMER</strong><br><br>
+        {MEDICAL_DISCLAIMER.strip()}
     </div>
     """,
         unsafe_allow_html=True,
     )
 
-    # Display chat history
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    # Chat messages container
+    chat_container = st.container()
 
-    # Chat input
+    with chat_container:
+        # Display chat history
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+    # Chat input (always at bottom)
     if prompt := st.chat_input("Ask about a medical condition..."):
         # Add user message
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+        with chat_container:
+            with st.chat_message("user"):
+                st.markdown(prompt)
 
         # Check for emergency
         if check_emergency(prompt):
@@ -201,51 +189,53 @@ with tab1:
                 {"role": "assistant", "content": emergency_response}
             )
 
-            with st.chat_message("assistant"):
-                st.markdown(
-                    f"""
-                <div class="emergency-box">
-                    {emergency_response}
-                </div>
-                """,
-                    unsafe_allow_html=True,
-                )
+            with chat_container:
+                with st.chat_message("assistant"):
+                    st.markdown(
+                        f"""
+                    <div class="emergency-box">
+                        {emergency_response}
+                    </div>
+                    """,
+                        unsafe_allow_html=True,
+                    )
 
         else:
             # Generate response
-            with st.chat_message("assistant"):
-                with st.spinner("Retrieving medical information..."):
-                    start_time = time.time()
+            with chat_container:
+                with st.chat_message("assistant"):
+                    with st.spinner("Retrieving medical information..."):
+                        start_time = time.time()
 
-                    # Retrieve context
-                    tool_selector = st.session_state.tool_selector
-                    results = tool_selector.select_and_search(prompt, k=5)
+                        # Retrieve context
+                        tool_selector = st.session_state.tool_selector
+                        results = tool_selector.select_and_search(prompt, k=5)
 
-                    if results["success"] and results["documents"]:
-                        # Store sources for later
-                        st.session_state.retrieved_docs = results["documents"]
+                        if results["success"] and results["documents"]:
+                            # Store sources for later
+                            st.session_state.retrieved_docs = results["documents"]
 
-                        # Generate summary
-                        context = tool_selector.format_results(results)
+                            # Generate summary
+                            context = tool_selector.format_results(results)
 
-                        llm_prompt = SUMMARY_PROMPT.format(
-                            topic=prompt,
-                            rag_context=context,
-                            schema=MedicalSummary.model_json_schema(),
-                        )
+                            llm_prompt = SUMMARY_PROMPT.format(
+                                topic=prompt,
+                                rag_context=context,
+                                schema=MedicalSummary.model_json_schema(),
+                            )
 
-                        messages = [
-                            SystemMessage(content=SYSTEM_PROMPT),
-                            HumanMessage(content=llm_prompt),
-                        ]
+                            messages = [
+                                SystemMessage(content=SYSTEM_PROMPT),
+                                HumanMessage(content=llm_prompt),
+                            ]
 
-                        llm_wrapper = st.session_state.llm_wrapper
-                        summary_obj = llm_wrapper.invoke_structured(
-                            messages, MedicalSummary
-                        )
+                            llm_wrapper = st.session_state.llm_wrapper
+                            summary_obj = llm_wrapper.invoke_structured(
+                                messages, MedicalSummary
+                            )
 
-                        # Format response
-                        response_text = f"""**{summary_obj.title}**
+                            # Format response
+                            response_text = f"""**{summary_obj.title}**
 
 **What is it?**
 {summary_obj.condition}
@@ -263,42 +253,42 @@ with tab1:
 {summary_obj.warning}
 """
 
-                        st.markdown(response_text)
-                        st.session_state.summary = summary_obj
+                            st.markdown(response_text)
+                            st.session_state.summary = summary_obj
 
-                        # Log metrics
-                        latency = time.time() - start_time
-                        avg_score = sum(
-                            doc.get("score", 0) for doc in results["documents"]
-                        ) / len(results["documents"])
+                            # Log metrics
+                            latency = time.time() - start_time
+                            avg_score = sum(
+                                doc.get("score", 0) for doc in results["documents"]
+                            ) / len(results["documents"])
 
-                        metrics_tracker = st.session_state.metrics_tracker
-                        metrics_tracker.log_run(
-                            {
-                                "topic": prompt,
-                                "total_latency": latency,
-                                "retrieval_score": avg_score,
-                                "num_retrieved_docs": len(results["documents"]),
-                                "tool_calls": 1,
-                                "confidence_score": 0.85,
-                                "emergency_detected": False,
-                                "used_rag": True,
-                            }
+                            metrics_tracker = st.session_state.metrics_tracker
+                            metrics_tracker.log_run(
+                                {
+                                    "topic": prompt,
+                                    "total_latency": latency,
+                                    "retrieval_score": avg_score,
+                                    "num_retrieved_docs": len(results["documents"]),
+                                    "tool_calls": 1,
+                                    "confidence_score": 0.85,
+                                    "emergency_detected": False,
+                                    "used_rag": True,
+                                }
+                            )
+
+                            # Show execution time
+                            st.caption(
+                                f"⚡ Generated in {latency:.2f}s | Method: {results.get('method', 'unknown')}"
+                            )
+
+                        else:
+                            error_msg = "I couldn't find relevant medical information. Please try rephrasing your question."
+                            st.error(error_msg)
+                            response_text = error_msg
+
+                        st.session_state.messages.append(
+                            {"role": "assistant", "content": response_text}
                         )
-
-                        # Show execution time
-                        st.caption(
-                            f"⚡ Generated in {latency:.2f}s | Method: {results.get('method', 'unknown')}"
-                        )
-
-                    else:
-                        error_msg = "I couldn't find relevant medical information. Please try rephrasing your question."
-                        st.error(error_msg)
-                        response_text = error_msg
-
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": response_text}
-                )
 
 # Tab 2: Quiz
 with tab2:

@@ -30,15 +30,7 @@ EMERGENCY_KEYWORDS: list[str] = [
     "choking",
 ]
 
-MEDICAL_DISCLAIMER = """
-⚠️ **MEDICAL DISCLAIMER**
-
-This information is provided for educational purposes only and is not a substitute
-for professional medical advice, diagnosis, or treatment. Always seek the advice of
-your physician or other qualified health provider with any questions you may have
-regarding a medical condition. Never disregard professional medical advice or delay
-in seeking it because of something you have read here.
-"""
+MEDICAL_DISCLAIMER = """This information is provided for educational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition. Never disregard professional medical advice or delay in seeking it because of something you have read here."""
 
 EMERGENCY_ALERT = """
 🚨 **EMERGENCY ALERT** 🚨
