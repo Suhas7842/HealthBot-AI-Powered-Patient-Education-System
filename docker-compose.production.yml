@@ -1,0 +1,66 @@
+# Production Docker Compose - Cloud-Native Architecture
+# Deploy with: docker-compose -f docker-compose.production.yml up --scale api=3
+
+version: '3.8'
+
+services:
+  # Stateless API instances (auto-scale)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    environment:
+      # LLM (Groq - FREE)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=llama-3.3-70b-versatile
+      - OPENAI_BASE_URL=https://api.groq.com/openai/v1
+
+      # Vector DB (Pinecone - Cloud)
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_ENVIRONMENT=${PINECONE_ENVIRONMENT}
+      - PINECONE_INDEX_NAME=medical-knowledge
+      - USE_CLOUD_VECTOR_DB=true
+
+      # Web Search (Tavily - Real-time)
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+
+      # App settings
+      - LOG_LEVEL=INFO
+      - SEARCH_RESULTS=5
+
+    ports:
+      - "8000-8010:8000"  # Multiple instances
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+    restart: unless-stopped
+
+    deploy:
+      replicas: 3  # Run 3 instances
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # Load balancer (Nginx)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge

@@ -1,0 +1,42 @@
+# Core LangChain and LangGraph
+langchain==0.2.16
+langchain-openai==0.1.23
+langchain-community==0.2.16
+langgraph==0.2.19
+langghainhub==0.1.21
+
+# Vector Store and Embeddings
+chromadb==0.4.24
+sentence-transformers==2.7.0
+
+# Data Processing
+biopython==1.83
+pandas==2.2.2
+numpy==1.26.4
+
+# Search and Retrieval
+tavily-python==0.4.0
+rank-bm25==0.2.2
+
+# Evaluation
+ragas==0.1.9
+
+# API and Web
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+streamlit==1.35.0
+pydantic==2.7.4
+pydantic-settings==2.3.3
+
+# Utilities
+python-dotenv==1.0.1
+tenacity==8.4.1
+tqdm==4.66.4
+
+# Testing
+pytest==8.2.2
+pytest-asyncio==0.23.7
+
+# Development
+black==24.4.2
+mypy==1.10.0

@@ -1,0 +1,33 @@
+# Production Dockerfile - Stateless with Cloud Services
+# Container size: ~120 MB (vs 500 MB with local ChromaDB)
+
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install minimal dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir \
+    fastapi==0.111.0 \
+    uvicorn[standard]==0.30.1 \
+    langchain==0.2.16 \
+    langchain-openai==0.1.23 \
+    pydantic==2.7.4 \
+    pydantic-settings==2.3.3 \
+    pinecone==5.0.0 \
+    sentence-transformers==2.7.0 \
+    tavily-python==0.4.0 \
+    tenacity==8.4.1 \
+    python-dotenv==1.0.1
+
+# Copy application code (no data or ChromaDB)
+COPY healthbot/ ./healthbot/
+COPY api.py .
+COPY config.env .
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD python -c "import requests; requests.get('http://localhost:8000/health')"
+
+# Run API
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
