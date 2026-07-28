@@ -3,19 +3,35 @@ Tools integration for HealthBot: RAG retrieval and Tavily search.
 Provides fallback mechanisms for comprehensive medical information.
 """
 
-from typing import Dict
 from langchain_community.tools.tavily_search import TavilySearchResults
-from healthbot.retrieval.retriever import HybridRetriever
+
 from healthbot.config import settings
 from healthbot.logger import logger
-
+from healthbot.retrieval.retriever import HybridRetriever
 
 # Known medical conditions covered by our knowledge base
 KNOWN_CONDITIONS = [
-    "diabetes", "hypertension", "asthma", "heart disease", "coronary",
-    "depression", "anxiety", "arthritis", "migraine", "allergies",
-    "influenza", "flu", "cold", "obesity", "cancer", "stroke",
-    "copd", "pneumonia", "gastritis", "kidney disease", "thyroid"
+    "diabetes",
+    "hypertension",
+    "asthma",
+    "heart disease",
+    "coronary",
+    "depression",
+    "anxiety",
+    "arthritis",
+    "migraine",
+    "allergies",
+    "influenza",
+    "flu",
+    "cold",
+    "obesity",
+    "cancer",
+    "stroke",
+    "copd",
+    "pneumonia",
+    "gastritis",
+    "kidney disease",
+    "thyroid",
 ]
 
 
@@ -28,6 +44,7 @@ class RAGTool:
             # Try Pinecone cloud first (production)
             if settings.USE_CLOUD_VECTOR_DB and settings.PINECONE_API_KEY:
                 from healthbot.retrieval.pinecone_store import PineconeVectorStore
+
                 self.retriever = PineconeVectorStore()
                 logger.info("RAG tool initialized with Pinecone (cloud)")
             else:
@@ -39,7 +56,7 @@ class RAGTool:
             logger.error(f"Failed to initialize RAG tool: {e}")
             self.available = False
 
-    def search(self, query: str, k: int = 5) -> Dict:
+    def search(self, query: str, k: int = 5) -> dict:
         """
         Search medical knowledge base.
 
@@ -54,14 +71,14 @@ class RAGTool:
             return {
                 "success": False,
                 "error": "RAG tool not available. Vector store may not be built.",
-                "documents": []
+                "documents": [],
             }
 
         try:
             logger.info(f"RAG search: '{query}'")
 
             # Check if using Pinecone (has similarity_search) or HybridRetriever (has retrieve)
-            if hasattr(self.retriever, 'similarity_search'):
+            if hasattr(self.retriever, "similarity_search"):
                 # Pinecone cloud
                 results = self.retriever.similarity_search(query, k=k)
                 documents = results  # Already in correct format
@@ -74,18 +91,14 @@ class RAGTool:
                 "method": "rag",
                 "query": query,
                 "num_results": len(documents),
-                "documents": documents
+                "documents": documents,
             }
 
         except Exception as e:
             logger.error(f"RAG search failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "documents": []
-            }
+            return {"success": False, "error": str(e), "documents": []}
 
-    def format_results(self, results: Dict) -> str:
+    def format_results(self, results: dict) -> str:
         """
         Format RAG search results as text.
 
@@ -102,7 +115,7 @@ class RAGTool:
             return "No relevant information found in knowledge base."
 
         # Format based on retriever type
-        if hasattr(self.retriever, 'format_context'):
+        if hasattr(self.retriever, "format_context"):
             # HybridRetriever has format_context
             return self.retriever.format_context(results["documents"])
         else:
@@ -124,8 +137,7 @@ class TavilyTool:
         if settings.TAVILY_API_KEY:
             try:
                 self.tavily = TavilySearchResults(
-                    max_results=settings.SEARCH_RESULTS,
-                    api_key=settings.TAVILY_API_KEY
+                    max_results=settings.SEARCH_RESULTS, api_key=settings.TAVILY_API_KEY
                 )
                 self.available = True
                 logger.info("Tavily tool initialized successfully")
@@ -136,7 +148,7 @@ class TavilyTool:
             logger.warning("Tavily API key not configured")
             self.available = False
 
-    def search(self, query: str) -> Dict:
+    def search(self, query: str) -> dict:
         """
         Search web using Tavily.
 
@@ -147,11 +159,7 @@ class TavilyTool:
             Dictionary with results and metadata
         """
         if not self.available:
-            return {
-                "success": False,
-                "error": "Tavily not configured",
-                "documents": []
-            }
+            return {"success": False, "error": "Tavily not configured", "documents": []}
 
         try:
             logger.info(f"Tavily search: '{query}'")
@@ -160,31 +168,29 @@ class TavilyTool:
             # Format results
             documents = []
             for result in results:
-                documents.append({
-                    "text": result.get("content", ""),
-                    "title": result.get("title", ""),
-                    "url": result.get("url", ""),
-                    "score": result.get("score", 0.0),
-                    "method": "tavily"
-                })
+                documents.append(
+                    {
+                        "text": result.get("content", ""),
+                        "title": result.get("title", ""),
+                        "url": result.get("url", ""),
+                        "score": result.get("score", 0.0),
+                        "method": "tavily",
+                    }
+                )
 
             return {
                 "success": True,
                 "method": "tavily",
                 "query": query,
                 "num_results": len(documents),
-                "documents": documents
+                "documents": documents,
             }
 
         except Exception as e:
             logger.error(f"Tavily search failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "documents": []
-            }
+            return {"success": False, "error": str(e), "documents": []}
 
-    def format_results(self, results: Dict) -> str:
+    def format_results(self, results: dict) -> str:
         """
         Format Tavily search results as text.
 
@@ -232,7 +238,7 @@ class ToolSelector:
         query_lower = query.lower()
         return any(condition in query_lower for condition in KNOWN_CONDITIONS)
 
-    def select_and_search(self, query: str, k: int = 5) -> Dict:
+    def select_and_search(self, query: str, k: int = 5) -> dict:
         """
         Select appropriate tool and perform search.
 
@@ -272,10 +278,10 @@ class ToolSelector:
             return {
                 "success": False,
                 "error": "No search tools available",
-                "documents": []
+                "documents": [],
             }
 
-    def format_results(self, results: Dict) -> str:
+    def format_results(self, results: dict) -> str:
         """
         Format results based on method used.
 
@@ -301,9 +307,9 @@ def main():
     """Test tool selector."""
     selector = ToolSelector()
 
-    print("="*80)
+    print("=" * 80)
     print("TOOL SELECTOR TEST")
-    print("="*80)
+    print("=" * 80)
 
     # Test 1: Known condition (should use RAG)
     query1 = "What are the symptoms of diabetes?"
@@ -321,12 +327,12 @@ def main():
     print(f"Success: {results2['success']}")
     print(f"Results: {results2.get('num_results', 0)}")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("FORMATTED CONTEXT")
-    print("="*80)
+    print("=" * 80)
     context = selector.format_results(results1)
     print(context[:500] + "...")
-    print("="*80)
+    print("=" * 80)
 
 
 if __name__ == "__main__":

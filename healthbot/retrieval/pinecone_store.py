@@ -3,12 +3,13 @@ Pinecone cloud vector store for production deployment.
 Replaces local ChromaDB with scalable cloud-hosted vectors.
 """
 
-from typing import List, Dict, Optional
+import time
+
 from pinecone import Pinecone, ServerlessSpec
-from healthbot.retrieval.embeddings import EmbeddingManager
+
 from healthbot.config import settings
 from healthbot.logger import logger
-import time
+from healthbot.retrieval.embeddings import EmbeddingManager
 
 
 class PineconeVectorStore:
@@ -18,7 +19,7 @@ class PineconeVectorStore:
         self,
         index_name: str = "medical-knowledge",
         dimension: int = 384,
-        metric: str = "cosine"
+        metric: str = "cosine",
     ):
         """
         Initialize Pinecone vector store.
@@ -58,13 +59,13 @@ class PineconeVectorStore:
                 dimension=self.dimension,
                 metric=self.metric,
                 spec=ServerlessSpec(
-                    cloud='aws',
-                    region='us-east-1'  # Free tier region
-                )
+                    cloud="aws",
+                    region="us-east-1",  # Free tier region
+                ),
             )
 
             # Wait for index to be ready
-            while not self.pc.describe_index(self.index_name).status['ready']:
+            while not self.pc.describe_index(self.index_name).status["ready"]:
                 logger.info("Waiting for index to be ready...")
                 time.sleep(1)
 
@@ -75,11 +76,7 @@ class PineconeVectorStore:
         # Connect to index
         self.index = self.pc.Index(self.index_name)
 
-    def add_documents(
-        self,
-        documents: List[Dict],
-        batch_size: int = 100
-    ) -> None:
+    def add_documents(self, documents: list[dict], batch_size: int = 100) -> None:
         """
         Add documents to Pinecone index.
 
@@ -90,10 +87,10 @@ class PineconeVectorStore:
         logger.info(f"Adding {len(documents)} documents to Pinecone")
 
         for i in range(0, len(documents), batch_size):
-            batch = documents[i:i + batch_size]
+            batch = documents[i : i + batch_size]
 
             # Extract texts
-            texts = [doc['text'] for doc in batch]
+            texts = [doc["text"] for doc in batch]
 
             # Generate embeddings
             embeddings = self.embedding_manager.embed_batch(texts)
@@ -103,15 +100,19 @@ class PineconeVectorStore:
             for j, (doc, embedding) in enumerate(zip(batch, embeddings)):
                 vector_id = f"doc_{i + j}"
                 # Convert embedding to list if it's a numpy array
-                emb_list = embedding.tolist() if hasattr(embedding, 'tolist') else embedding
-                vectors.append({
-                    'id': vector_id,
-                    'values': emb_list,
-                    'metadata': {
-                        'text': doc['text'][:1000],  # Pinecone metadata limit
-                        **doc.get('metadata', {})
+                emb_list = (
+                    embedding.tolist() if hasattr(embedding, "tolist") else embedding
+                )
+                vectors.append(
+                    {
+                        "id": vector_id,
+                        "values": emb_list,
+                        "metadata": {
+                            "text": doc["text"][:1000],  # Pinecone metadata limit
+                            **doc.get("metadata", {}),
+                        },
                     }
-                })
+                )
 
             # Upsert to Pinecone
             self.index.upsert(vectors=vectors)
@@ -120,11 +121,8 @@ class PineconeVectorStore:
         logger.info(f"Successfully added {len(documents)} documents to Pinecone")
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 5,
-        filter: Optional[Dict] = None
-    ) -> List[Dict]:
+        self, query: str, k: int = 5, filter: dict | None = None
+    ) -> list[dict]:
         """
         Search for similar documents.
 
@@ -140,37 +138,41 @@ class PineconeVectorStore:
         query_embedding = self.embedding_manager.embed_text(query)
 
         # Convert to list if numpy array
-        query_emb_list = query_embedding.tolist() if hasattr(query_embedding, 'tolist') else query_embedding
+        query_emb_list = (
+            query_embedding.tolist()
+            if hasattr(query_embedding, "tolist")
+            else query_embedding
+        )
 
         # Search Pinecone
         results = self.index.query(
-            vector=query_emb_list,
-            top_k=k,
-            include_metadata=True,
-            filter=filter
+            vector=query_emb_list, top_k=k, include_metadata=True, filter=filter
         )
 
         # Format results
         documents = []
-        for match in results['matches']:
-            documents.append({
-                'text': match['metadata'].get('text', ''),
-                'score': float(match['score']),
-                'metadata': {
-                    k: v for k, v in match['metadata'].items()
-                    if k != 'text'  # Avoid duplicating text
+        for match in results["matches"]:
+            documents.append(
+                {
+                    "text": match["metadata"].get("text", ""),
+                    "score": float(match["score"]),
+                    "metadata": {
+                        k: v
+                        for k, v in match["metadata"].items()
+                        if k != "text"  # Avoid duplicating text
+                    },
                 }
-            })
+            )
 
         return documents
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """Get index statistics."""
         stats = self.index.describe_index_stats()
         return {
-            'total_vectors': stats['total_vector_count'],
-            'dimension': stats['dimension'],
-            'index_fullness': stats.get('index_fullness', 0.0)
+            "total_vectors": stats["total_vector_count"],
+            "dimension": stats["dimension"],
+            "index_fullness": stats.get("index_fullness", 0.0),
         }
 
 
@@ -189,14 +191,10 @@ def migrate_chromadb_to_pinecone():
 
     # Prepare documents
     documents = []
-    for i, (text, metadata) in enumerate(zip(
-        collection_data['documents'],
-        collection_data['metadatas']
-    )):
-        documents.append({
-            'text': text,
-            'metadata': metadata or {}
-        })
+    for i, (text, metadata) in enumerate(
+        zip(collection_data["documents"], collection_data["metadatas"])
+    ):
+        documents.append({"text": text, "metadata": metadata or {}})
 
     logger.info(f"Loaded {len(documents)} documents from ChromaDB")
 

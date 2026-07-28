@@ -4,7 +4,6 @@ Ensures type-safe, validated responses from the language model.
 """
 
 from pydantic import BaseModel, Field
-from typing import List
 
 
 class MedicalSummary(BaseModel):
@@ -12,12 +11,12 @@ class MedicalSummary(BaseModel):
 
     title: str = Field(description="Condition or topic name")
     condition: str = Field(description="Brief condition description")
-    causes: List[str] = Field(description="List of causes or risk factors")
-    symptoms: List[str] = Field(description="Common symptoms")
-    treatment: List[str] = Field(description="Treatment options")
+    causes: list[str] = Field(description="List of causes or risk factors")
+    symptoms: list[str] = Field(description="Common symptoms")
+    treatment: list[str] = Field(description="Treatment options")
     warning: str = Field(
         default="This information is for educational purposes only. Always consult a qualified healthcare professional for medical advice.",
-        description="Medical disclaimer"
+        description="Medical disclaimer",
     )
 
 
@@ -25,7 +24,7 @@ class QuizQuestion(BaseModel):
     """Structured quiz question with multiple choice options."""
 
     question: str = Field(description="The quiz question text")
-    choices: List[str] = Field(description="Four answer choices (A, B, C, D)")
+    choices: list[str] = Field(description="Four answer choices (A, B, C, D)")
     correct_answer: str = Field(description="The correct answer letter (A, B, C, or D)")
     explanation: str = Field(description="Explanation of why the answer is correct")
 

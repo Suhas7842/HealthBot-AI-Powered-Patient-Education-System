@@ -3,23 +3,28 @@ Streamlit UI for HealthBot - AI-Powered Patient Education System.
 Provides interactive chat interface with metrics dashboard.
 """
 
-import streamlit as st
 import time
-from typing import Dict, List
-from healthbot.tools import ToolSelector
-from healthbot.models import LLMWrapper
-from healthbot.schemas import MedicalSummary, QuizQuestion, QuizEvaluation
-from healthbot.safety import check_emergency, get_emergency_response, MEDICAL_DISCLAIMER
-from healthbot.prompts import SYSTEM_PROMPT, SUMMARY_PROMPT, QUIZ_PROMPT, EVALUATION_PROMPT
+
+import streamlit as st
+from langchain_core.messages import HumanMessage, SystemMessage
+
 from healthbot.evaluation.metrics import HealthBotMetrics
-from langchain_core.messages import SystemMessage, HumanMessage
+from healthbot.models import LLMWrapper
+from healthbot.prompts import (
+    QUIZ_PROMPT,
+    SUMMARY_PROMPT,
+    SYSTEM_PROMPT,
+)
+from healthbot.safety import MEDICAL_DISCLAIMER, check_emergency, get_emergency_response
+from healthbot.schemas import MedicalSummary, QuizQuestion
+from healthbot.tools import ToolSelector
 
 # Page config
 st.set_page_config(
     page_title="HealthBot - AI Medical Education",
     page_icon="🏥",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 # Initialize session state
@@ -37,7 +42,8 @@ if "llm_wrapper" not in st.session_state:
     st.session_state.llm_wrapper = LLMWrapper()
 
 # Custom CSS
-st.markdown("""
+st.markdown(
+    """
 <style>
     .main-header {
         font-size: 2.5rem;
@@ -73,11 +79,16 @@ st.markdown("""
         margin: 0.5rem 0;
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # Header
 st.markdown('<div class="main-header">🏥 HealthBot</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">AI-Powered Patient Education System</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="sub-header">AI-Powered Patient Education System</div>',
+    unsafe_allow_html=True,
+)
 
 # Sidebar - Metrics Dashboard
 with st.sidebar:
@@ -91,29 +102,19 @@ with st.sidebar:
         st.subheader("Recent Performance")
 
         # Latency
-        st.metric(
-            "Avg Latency",
-            f"{metrics['latency']['mean']:.2f}s",
-            delta=None
-        )
+        st.metric("Avg Latency", f"{metrics['latency']['mean']:.2f}s", delta=None)
 
         # Retrieval
-        st.metric(
-            "RAG Hit Rate",
-            f"{metrics['retrieval']['rag_hit_rate']*100:.1f}%"
-        )
+        st.metric("RAG Hit Rate", f"{metrics['retrieval']['rag_hit_rate'] * 100:.1f}%")
 
         # Cost
         st.metric(
             "Avg Cost/Query",
-            f"${metrics['cost']['estimated_cost_usd']/max(metrics['usage']['total_runs'], 1):.4f}"
+            f"${metrics['cost']['estimated_cost_usd'] / max(metrics['usage']['total_runs'], 1):.4f}",
         )
 
         # Total runs
-        st.metric(
-            "Total Queries",
-            metrics['usage']['total_runs']
-        )
+        st.metric("Total Queries", metrics["usage"]["total_runs"])
 
         # Show details
         with st.expander("📈 Detailed Metrics"):
@@ -172,11 +173,14 @@ tab1, tab2, tab3 = st.tabs(["💬 Chat", "📝 Quiz", "📚 Sources"])
 # Tab 1: Chat Interface
 with tab1:
     # Warning box
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div class="warning-box">
         ⚠️ <strong>Medical Disclaimer:</strong> {MEDICAL_DISCLAIMER.strip()}
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # Display chat history
     for message in st.session_state.messages:
@@ -193,14 +197,19 @@ with tab1:
         # Check for emergency
         if check_emergency(prompt):
             emergency_response = get_emergency_response()
-            st.session_state.messages.append({"role": "assistant", "content": emergency_response})
+            st.session_state.messages.append(
+                {"role": "assistant", "content": emergency_response}
+            )
 
             with st.chat_message("assistant"):
-                st.markdown(f"""
+                st.markdown(
+                    f"""
                 <div class="emergency-box">
                     {emergency_response}
                 </div>
-                """, unsafe_allow_html=True)
+                """,
+                    unsafe_allow_html=True,
+                )
 
         else:
             # Generate response
@@ -222,16 +231,18 @@ with tab1:
                         llm_prompt = SUMMARY_PROMPT.format(
                             topic=prompt,
                             rag_context=context,
-                            schema=MedicalSummary.model_json_schema()
+                            schema=MedicalSummary.model_json_schema(),
                         )
 
                         messages = [
                             SystemMessage(content=SYSTEM_PROMPT),
-                            HumanMessage(content=llm_prompt)
+                            HumanMessage(content=llm_prompt),
                         ]
 
                         llm_wrapper = st.session_state.llm_wrapper
-                        summary_obj = llm_wrapper.invoke_structured(messages, MedicalSummary)
+                        summary_obj = llm_wrapper.invoke_structured(
+                            messages, MedicalSummary
+                        )
 
                         # Format response
                         response_text = f"""**{summary_obj.title}**
@@ -240,13 +251,13 @@ with tab1:
 {summary_obj.condition}
 
 **Causes:**
-{chr(10).join(f'• {cause}' for cause in summary_obj.causes)}
+{chr(10).join(f"• {cause}" for cause in summary_obj.causes)}
 
 **Symptoms:**
-{chr(10).join(f'• {symptom}' for symptom in summary_obj.symptoms)}
+{chr(10).join(f"• {symptom}" for symptom in summary_obj.symptoms)}
 
 **Treatment:**
-{chr(10).join(f'• {treatment}' for treatment in summary_obj.treatment)}
+{chr(10).join(f"• {treatment}" for treatment in summary_obj.treatment)}
 
 ---
 {summary_obj.warning}
@@ -257,29 +268,37 @@ with tab1:
 
                         # Log metrics
                         latency = time.time() - start_time
-                        avg_score = sum(doc.get("score", 0) for doc in results["documents"]) / len(results["documents"])
+                        avg_score = sum(
+                            doc.get("score", 0) for doc in results["documents"]
+                        ) / len(results["documents"])
 
                         metrics_tracker = st.session_state.metrics_tracker
-                        metrics_tracker.log_run({
-                            "topic": prompt,
-                            "total_latency": latency,
-                            "retrieval_score": avg_score,
-                            "num_retrieved_docs": len(results["documents"]),
-                            "tool_calls": 1,
-                            "confidence_score": 0.85,
-                            "emergency_detected": False,
-                            "used_rag": True
-                        })
+                        metrics_tracker.log_run(
+                            {
+                                "topic": prompt,
+                                "total_latency": latency,
+                                "retrieval_score": avg_score,
+                                "num_retrieved_docs": len(results["documents"]),
+                                "tool_calls": 1,
+                                "confidence_score": 0.85,
+                                "emergency_detected": False,
+                                "used_rag": True,
+                            }
+                        )
 
                         # Show execution time
-                        st.caption(f"⚡ Generated in {latency:.2f}s | Method: {results.get('method', 'unknown')}")
+                        st.caption(
+                            f"⚡ Generated in {latency:.2f}s | Method: {results.get('method', 'unknown')}"
+                        )
 
                     else:
                         error_msg = "I couldn't find relevant medical information. Please try rephrasing your question."
                         st.error(error_msg)
                         response_text = error_msg
 
-                st.session_state.messages.append({"role": "assistant", "content": response_text})
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": response_text}
+                )
 
 # Tab 2: Quiz
 with tab2:
@@ -292,13 +311,12 @@ with tab2:
                 summary_text = str(st.session_state.summary.condition)
 
                 quiz_prompt = QUIZ_PROMPT.format(
-                    summary=summary_text,
-                    schema=QuizQuestion.model_json_schema()
+                    summary=summary_text, schema=QuizQuestion.model_json_schema()
                 )
 
                 messages = [
                     SystemMessage(content=SYSTEM_PROMPT),
-                    HumanMessage(content=quiz_prompt)
+                    HumanMessage(content=quiz_prompt),
                 ]
 
                 llm_wrapper = st.session_state.llm_wrapper
@@ -315,16 +333,18 @@ with tab2:
             answer = st.radio(
                 "Select your answer:",
                 options=["A", "B", "C", "D"],
-                format_func=lambda x: f"{x}) {quiz.choices['ABCD'.index(x)]}"
+                format_func=lambda x: f"{x}) {quiz.choices['ABCD'.index(x)]}",
             )
 
             if st.button("Submit Answer"):
-                correct = (answer == quiz.correct_answer)
+                correct = answer == quiz.correct_answer
 
                 if correct:
                     st.success(f"✅ Correct! {quiz.explanation}")
                 else:
-                    st.error(f"❌ Incorrect. The correct answer is {quiz.correct_answer}.")
+                    st.error(
+                        f"❌ Incorrect. The correct answer is {quiz.correct_answer}."
+                    )
                     st.info(f"💡 {quiz.explanation}")
     else:
         st.info("Start a conversation in the Chat tab to generate a quiz!")
@@ -333,16 +353,22 @@ with tab2:
 with tab3:
     st.subheader("📚 Source Documents")
 
-    if hasattr(st.session_state, 'retrieved_docs') and st.session_state.retrieved_docs:
+    if hasattr(st.session_state, "retrieved_docs") and st.session_state.retrieved_docs:
         for i, doc in enumerate(st.session_state.retrieved_docs, 1):
-            with st.expander(f"Source {i}: {doc.get('metadata', {}).get('title', 'Unknown')[:80]}..."):
+            with st.expander(
+                f"Source {i}: {doc.get('metadata', {}).get('title', 'Unknown')[:80]}..."
+            ):
                 st.write(f"**Relevance Score:** {doc.get('score', 0):.3f}")
                 st.write(f"**PMID:** {doc.get('metadata', {}).get('pmid', 'N/A')}")
-                st.write(f"**Condition:** {doc.get('metadata', {}).get('condition', 'N/A')}")
+                st.write(
+                    f"**Condition:** {doc.get('metadata', {}).get('condition', 'N/A')}"
+                )
                 st.divider()
-                st.write(doc['text'])
+                st.write(doc["text"])
     else:
-        st.info("No sources available yet. Ask a question in the Chat tab to retrieve medical information!")
+        st.info(
+            "No sources available yet. Ask a question in the Chat tab to retrieve medical information!"
+        )
 
 # Footer
 st.divider()

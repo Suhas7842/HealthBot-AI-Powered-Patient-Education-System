@@ -4,10 +4,11 @@ Fetches articles for common medical conditions to build knowledge base.
 """
 
 import time
-from typing import List, Dict, Optional
-from Bio import Entrez
+
 import pandas as pd
+from Bio import Entrez
 from tqdm import tqdm
+
 from healthbot.logger import logger
 
 # NCBI requires email for API access
@@ -41,7 +42,9 @@ MEDICAL_CONDITIONS = [
 class PubMedLoader:
     """Fetches medical articles from PubMed for building knowledge base."""
 
-    def __init__(self, articles_per_condition: int = 50, rate_limit_delay: float = 0.34):
+    def __init__(
+        self, articles_per_condition: int = 50, rate_limit_delay: float = 0.34
+    ):
         """
         Initialize PubMed loader.
 
@@ -51,9 +54,9 @@ class PubMedLoader:
         """
         self.articles_per_condition = articles_per_condition
         self.rate_limit_delay = rate_limit_delay
-        self.all_articles: List[Dict] = []
+        self.all_articles: list[dict] = []
 
-    def search_pubmed(self, query: str, max_results: int) -> List[str]:
+    def search_pubmed(self, query: str, max_results: int) -> list[str]:
         """
         Search PubMed and return list of PMIDs.
 
@@ -66,10 +69,7 @@ class PubMedLoader:
         """
         try:
             handle = Entrez.esearch(
-                db="pubmed",
-                term=query,
-                retmax=max_results,
-                sort="relevance"
+                db="pubmed", term=query, retmax=max_results, sort="relevance"
             )
             record = Entrez.read(handle)
             handle.close()
@@ -78,7 +78,7 @@ class PubMedLoader:
             logger.error(f"PubMed search failed for '{query}': {e}")
             return []
 
-    def fetch_article_details(self, pmid: str) -> Optional[Dict]:
+    def fetch_article_details(self, pmid: str) -> dict | None:
         """
         Fetch full article details for a given PMID.
 
@@ -90,10 +90,7 @@ class PubMedLoader:
         """
         try:
             handle = Entrez.efetch(
-                db="pubmed",
-                id=pmid,
-                rettype="medline",
-                retmode="text"
+                db="pubmed", id=pmid, rettype="medline", retmode="text"
             )
             record = handle.read()
             handle.close()
@@ -106,7 +103,7 @@ class PubMedLoader:
             logger.error(f"Failed to fetch PMID {pmid}: {e}")
             return None
 
-    def _parse_medline(self, medline_text: str, pmid: str) -> Dict:
+    def _parse_medline(self, medline_text: str, pmid: str) -> dict:
         """
         Parse medline format text into structured data.
 
@@ -154,7 +151,7 @@ class PubMedLoader:
             "year": year,
         }
 
-    def fetch_articles_for_condition(self, condition: str) -> List[Dict]:
+    def fetch_articles_for_condition(self, condition: str) -> list[dict]:
         """
         Fetch articles for a specific medical condition.
 
@@ -187,8 +184,8 @@ class PubMedLoader:
 
     def build_knowledge_base(
         self,
-        conditions: Optional[List[str]] = None,
-        output_path: str = "data/medical_kb.parquet"
+        conditions: list[str] | None = None,
+        output_path: str = "data/medical_kb.parquet",
     ) -> pd.DataFrame:
         """
         Build complete medical knowledge base by fetching articles for all conditions.
@@ -237,14 +234,14 @@ def main():
     df = loader.build_knowledge_base()
 
     # Print summary statistics
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("KNOWLEDGE BASE SUMMARY")
-    print("="*80)
+    print("=" * 80)
     print(f"Total articles: {len(df)}")
     print(f"Conditions: {df['condition'].nunique()}")
     print("\nArticles per condition:")
-    print(df['condition'].value_counts().to_string())
-    print("="*80)
+    print(df["condition"].value_counts().to_string())
+    print("=" * 80)
 
 
 if __name__ == "__main__":

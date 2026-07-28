@@ -3,9 +3,10 @@ Data processing pipeline for preparing medical documents.
 Loads, cleans, and chunks documents for embedding and retrieval.
 """
 
-import pandas as pd
-from typing import List, Dict
 from pathlib import Path
+
+import pandas as pd
+
 from healthbot.data.chunker import TextChunker
 from healthbot.logger import logger
 
@@ -23,7 +24,9 @@ class DocumentProcessor:
         """
         self.chunker = TextChunker(chunk_size, chunk_overlap)
 
-    def load_knowledge_base(self, path: str = "data/medical_kb.parquet") -> pd.DataFrame:
+    def load_knowledge_base(
+        self, path: str = "data/medical_kb.parquet"
+    ) -> pd.DataFrame:
         """
         Load medical knowledge base from parquet file.
 
@@ -65,7 +68,7 @@ class DocumentProcessor:
 
         return text.strip()
 
-    def prepare_documents(self, df: pd.DataFrame) -> List[Dict]:
+    def prepare_documents(self, df: pd.DataFrame) -> list[dict]:
         """
         Prepare documents for embedding by cleaning and structuring.
 
@@ -99,7 +102,7 @@ class DocumentProcessor:
         logger.info(f"Prepared {len(documents)} documents for processing")
         return documents
 
-    def chunk_and_prepare(self, documents: List[Dict]) -> List[Dict]:
+    def chunk_and_prepare(self, documents: list[dict]) -> list[dict]:
         """
         Chunk documents for embedding.
 
@@ -114,9 +117,8 @@ class DocumentProcessor:
         return chunks
 
     def process_knowledge_base(
-        self,
-        kb_path: str = "data/medical_kb.parquet"
-    ) -> List[Dict]:
+        self, kb_path: str = "data/medical_kb.parquet"
+    ) -> list[dict]:
         """
         Complete processing pipeline: load, clean, and chunk knowledge base.
 
@@ -150,16 +152,16 @@ def main():
         chunks = processor.process_knowledge_base()
 
         # Print summary
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("DOCUMENT PROCESSING SUMMARY")
-        print("="*80)
+        print("=" * 80)
         print(f"Total chunks: {len(chunks)}")
         print("\nSample chunk:")
         print(f"  PMID: {chunks[0]['pmid']}")
         print(f"  Condition: {chunks[0]['condition']}")
         print(f"  Text length: {len(chunks[0]['text'])} chars")
         print(f"  Text preview: {chunks[0]['text'][:200]}...")
-        print("="*80)
+        print("=" * 80)
 
     except FileNotFoundError as e:
         print(f"\nError: {e}")

@@ -4,18 +4,14 @@ Chunks text with overlap for better retrieval context.
 """
 
 import re
-from typing import List, Dict
+
 from healthbot.config import settings
 
 
 class TextChunker:
     """Chunks text into smaller segments for embedding and retrieval."""
 
-    def __init__(
-        self,
-        chunk_size: int = None,
-        chunk_overlap: int = None
-    ):
+    def __init__(self, chunk_size: int = None, chunk_overlap: int = None):
         """
         Initialize text chunker.
 
@@ -26,7 +22,7 @@ class TextChunker:
         self.chunk_size = chunk_size or settings.CHUNK_SIZE
         self.chunk_overlap = chunk_overlap or settings.CHUNK_OVERLAP
 
-    def split_on_sentences(self, text: str) -> List[str]:
+    def split_on_sentences(self, text: str) -> list[str]:
         """
         Split text into sentences using regex.
 
@@ -37,10 +33,10 @@ class TextChunker:
             List of sentences
         """
         # Split on sentence boundaries (., !, ?)
-        sentences = re.split(r'(?<=[.!?])\s+', text)
+        sentences = re.split(r"(?<=[.!?])\s+", text)
         return [s.strip() for s in sentences if s.strip()]
 
-    def chunk_text(self, text: str, metadata: Dict = None) -> List[Dict]:
+    def chunk_text(self, text: str, metadata: dict = None) -> list[dict]:
         """
         Chunk text into overlapping segments.
 
@@ -53,11 +49,7 @@ class TextChunker:
         """
         if not text or len(text) < self.chunk_size:
             # Return single chunk if text is short
-            return [{
-                "text": text,
-                "chunk_id": 0,
-                **(metadata or {})
-            }]
+            return [{"text": text, "chunk_id": 0, **(metadata or {})}]
 
         sentences = self.split_on_sentences(text)
         chunks = []
@@ -71,11 +63,9 @@ class TextChunker:
             # If adding this sentence exceeds chunk_size, save current chunk
             if current_length + sentence_length > self.chunk_size and current_chunk:
                 chunk_text = " ".join(current_chunk)
-                chunks.append({
-                    "text": chunk_text,
-                    "chunk_id": chunk_id,
-                    **(metadata or {})
-                })
+                chunks.append(
+                    {"text": chunk_text, "chunk_id": chunk_id, **(metadata or {})}
+                )
 
                 # Start new chunk with overlap
                 # Keep sentences that fit within overlap window
@@ -98,15 +88,15 @@ class TextChunker:
         # Add final chunk
         if current_chunk:
             chunk_text = " ".join(current_chunk)
-            chunks.append({
-                "text": chunk_text,
-                "chunk_id": chunk_id,
-                **(metadata or {})
-            })
+            chunks.append(
+                {"text": chunk_text, "chunk_id": chunk_id, **(metadata or {})}
+            )
 
         return chunks
 
-    def chunk_documents(self, documents: List[Dict], text_field: str = "abstract") -> List[Dict]:
+    def chunk_documents(
+        self, documents: list[dict], text_field: str = "abstract"
+    ) -> list[dict]:
         """
         Chunk multiple documents.
 
@@ -125,10 +115,7 @@ class TextChunker:
                 continue
 
             # Create metadata from document
-            metadata = {
-                k: v for k, v in doc.items()
-                if k != text_field
-            }
+            metadata = {k: v for k, v in doc.items() if k != text_field}
 
             # Chunk the text
             chunks = self.chunk_text(text, metadata)
@@ -154,18 +141,18 @@ def main():
     chunker = TextChunker(chunk_size=200, chunk_overlap=50)
     chunks = chunker.chunk_text(sample_text.strip(), {"source": "test"})
 
-    print("="*80)
+    print("=" * 80)
     print("TEXT CHUNKING DEMO")
-    print("="*80)
+    print("=" * 80)
     print(f"Original text length: {len(sample_text.strip())} characters")
     print(f"Number of chunks: {len(chunks)}")
-    print("="*80)
+    print("=" * 80)
 
     for i, chunk in enumerate(chunks):
         print(f"\nChunk {i} ({len(chunk['text'])} chars):")
         print(f"{chunk['text'][:100]}...")
 
-    print("="*80)
+    print("=" * 80)
 
 
 if __name__ == "__main__":

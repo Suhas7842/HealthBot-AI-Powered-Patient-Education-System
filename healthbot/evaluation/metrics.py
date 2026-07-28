@@ -4,9 +4,9 @@ Tracks latency, retrieval quality, cost, and user experience metrics.
 """
 
 import json
-from typing import List, Dict, Optional
 from datetime import datetime
 from pathlib import Path
+
 import numpy as np
 
 
@@ -29,7 +29,7 @@ class HealthBotMetrics:
             log_file: Path to save metrics log
         """
         self.log_file = log_file
-        self.run_history: List[Dict] = []
+        self.run_history: list[dict] = []
         self._load_history()
 
     def _load_history(self) -> None:
@@ -41,7 +41,7 @@ class HealthBotMetrics:
             except Exception:
                 self.run_history = []
 
-    def log_run(self, run_data: Dict) -> None:
+    def log_run(self, run_data: dict) -> None:
         """
         Log a single workflow run.
 
@@ -58,7 +58,7 @@ class HealthBotMetrics:
         with open(self.log_file, "a") as f:
             f.write(json.dumps(run_data) + "\n")
 
-    def extract_run_metrics(self, state: Dict) -> Dict:
+    def extract_run_metrics(self, state: dict) -> dict:
         """
         Extract metrics from workflow state.
 
@@ -88,10 +88,10 @@ class HealthBotMetrics:
             "total_tokens": total_tokens,
             "confidence_score": state.get("confidence_score", 0),
             "emergency_detected": state.get("emergency_detected", False),
-            "used_rag": len(state.get("retrieved_docs", [])) > 0
+            "used_rag": len(state.get("retrieved_docs", [])) > 0,
         }
 
-    def calculate_metrics(self, recent_n: Optional[int] = None) -> Dict:
+    def calculate_metrics(self, recent_n: int | None = None) -> dict:
         """
         Calculate aggregate metrics from run history.
 
@@ -109,7 +109,9 @@ class HealthBotMetrics:
 
         # Extract values
         latencies = [r.get("total_latency", 0) for r in runs if "total_latency" in r]
-        retrieval_scores = [r.get("retrieval_score", 0) for r in runs if "retrieval_score" in r]
+        retrieval_scores = [
+            r.get("retrieval_score", 0) for r in runs if "retrieval_score" in r
+        ]
         tokens = [r.get("total_tokens", 0) for r in runs if "total_tokens" in r]
         tool_calls = [r.get("tool_calls", 0) for r in runs]
         rag_used = [r.get("used_rag", False) for r in runs]
@@ -124,41 +126,43 @@ class HealthBotMetrics:
                 "p95": float(np.percentile(latencies, 95)) if latencies else 0,
                 "p99": float(np.percentile(latencies, 99)) if latencies else 0,
                 "min": float(np.min(latencies)) if latencies else 0,
-                "max": float(np.max(latencies)) if latencies else 0
+                "max": float(np.max(latencies)) if latencies else 0,
             },
-
             # Retrieval metrics
             "retrieval": {
-                "mean_score": float(np.mean(retrieval_scores)) if retrieval_scores else 0,
-                "median_score": float(np.median(retrieval_scores)) if retrieval_scores else 0,
-                "rag_hit_rate": sum(rag_used) / len(runs) if runs else 0
+                "mean_score": float(np.mean(retrieval_scores))
+                if retrieval_scores
+                else 0,
+                "median_score": float(np.median(retrieval_scores))
+                if retrieval_scores
+                else 0,
+                "rag_hit_rate": sum(rag_used) / len(runs) if runs else 0,
             },
-
             # Cost metrics (rough estimates)
             "cost": {
                 "mean_tokens": float(np.mean(tokens)) if tokens else 0,
                 "total_tokens": sum(tokens),
                 # Rough cost estimate: GPT-4o-mini at $0.15/$0.60 per 1M tokens (input/output)
-                "estimated_cost_usd": sum(tokens) * 0.0000004 if tokens else 0  # Avg rate
+                "estimated_cost_usd": sum(tokens) * 0.0000004
+                if tokens
+                else 0,  # Avg rate
             },
-
             # Usage metrics
             "usage": {
                 "total_runs": len(runs),
                 "mean_tool_calls": float(np.mean(tool_calls)) if tool_calls else 0,
-                "emergency_rate": sum(emergencies) / len(runs) if runs else 0
+                "emergency_rate": sum(emergencies) / len(runs) if runs else 0,
             },
-
             # Time range
             "period": {
                 "start": runs[0].get("timestamp", "unknown") if runs else None,
-                "end": runs[-1].get("timestamp", "unknown") if runs else None
-            }
+                "end": runs[-1].get("timestamp", "unknown") if runs else None,
+            },
         }
 
         return metrics
 
-    def get_metrics_by_condition(self) -> Dict:
+    def get_metrics_by_condition(self) -> dict:
         """
         Calculate metrics grouped by medical condition.
 
@@ -180,12 +184,12 @@ class HealthBotMetrics:
             condition_metrics[condition] = {
                 "count": len(runs),
                 "avg_latency": float(np.mean(latencies)) if latencies else 0,
-                "avg_retrieval_score": float(np.mean(scores)) if scores else 0
+                "avg_retrieval_score": float(np.mean(scores)) if scores else 0,
             }
 
         return condition_metrics
 
-    def print_summary(self, recent_n: Optional[int] = None) -> None:
+    def print_summary(self, recent_n: int | None = None) -> None:
         """
         Print formatted metrics summary.
 
@@ -198,16 +202,16 @@ class HealthBotMetrics:
             print(f"Error: {metrics['error']}")
             return
 
-        print("="*80)
+        print("=" * 80)
         print("HEALTHBOT PERFORMANCE METRICS")
-        print("="*80)
+        print("=" * 80)
 
         # Usage stats
         usage = metrics["usage"]
         print("\n📊 Usage Statistics")
         print(f"  Total Runs: {usage['total_runs']}")
         print(f"  Avg Tool Calls per Run: {usage['mean_tool_calls']:.2f}")
-        print(f"  Emergency Detection Rate: {usage['emergency_rate']*100:.1f}%")
+        print(f"  Emergency Detection Rate: {usage['emergency_rate'] * 100:.1f}%")
 
         # Latency stats
         latency = metrics["latency"]
@@ -223,7 +227,7 @@ class HealthBotMetrics:
         print("\n🔍 Retrieval Quality")
         print(f"  Mean Relevance Score: {retrieval['mean_score']:.3f}")
         print(f"  Median Score: {retrieval['median_score']:.3f}")
-        print(f"  RAG Hit Rate: {retrieval['rag_hit_rate']*100:.1f}%")
+        print(f"  RAG Hit Rate: {retrieval['rag_hit_rate'] * 100:.1f}%")
 
         # Cost stats
         cost = metrics["cost"]
@@ -239,7 +243,7 @@ class HealthBotMetrics:
             print(f"  From: {period['start'][:19]}")  # Trim microseconds
             print(f"  To: {period['end'][:19]}")
 
-        print("="*80)
+        print("=" * 80)
 
     def export_report(self, output_path: str = "metrics_report.json") -> None:
         """
@@ -252,7 +256,7 @@ class HealthBotMetrics:
             "overall_metrics": self.calculate_metrics(),
             "by_condition": self.get_metrics_by_condition(),
             "recent_10": self.calculate_metrics(recent_n=10),
-            "total_runs": len(self.run_history)
+            "total_runs": len(self.run_history),
         }
 
         with open(output_path, "w") as f:
@@ -274,9 +278,9 @@ def main():
     metrics.print_summary()
 
     # Show per-condition breakdown
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("METRICS BY CONDITION")
-    print("="*80)
+    print("=" * 80)
 
     by_condition = metrics.get_metrics_by_condition()
     for condition, stats in sorted(by_condition.items()):
@@ -285,7 +289,7 @@ def main():
         print(f"  Avg Latency: {stats['avg_latency']:.2f}s")
         print(f"  Avg Retrieval Score: {stats['avg_retrieval_score']:.3f}")
 
-    print("="*80)
+    print("=" * 80)
 
     # Export report
     metrics.export_report()

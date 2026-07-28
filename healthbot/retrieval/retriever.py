@@ -3,11 +3,11 @@ Hybrid retrieval combining semantic search (Pinecone) and keyword search (BM25).
 Uses reciprocal rank fusion to combine results from both methods.
 """
 
-from typing import List, Dict
 from rank_bm25 import BM25Okapi
-from healthbot.retrieval.pinecone_store import PineconeVectorStore
+
 from healthbot.data.processor import DocumentProcessor
 from healthbot.logger import logger
+from healthbot.retrieval.pinecone_store import PineconeVectorStore
 
 
 class HybridRetriever:
@@ -38,13 +38,13 @@ class HybridRetriever:
                 return
 
             # Extract text and metadata from chunks
-            self.bm25_documents = [chunk['text'] for chunk in chunks]
+            self.bm25_documents = [chunk["text"] for chunk in chunks]
             self.bm25_metadatas = [
                 {
-                    'pmid': chunk.get('pmid', ''),
-                    'title': chunk.get('title', ''),
-                    'condition': chunk.get('condition', ''),
-                    'chunk_id': chunk.get('chunk_id', '')
+                    "pmid": chunk.get("pmid", ""),
+                    "title": chunk.get("title", ""),
+                    "condition": chunk.get("condition", ""),
+                    "chunk_id": chunk.get("chunk_id", ""),
                 }
                 for chunk in chunks
             ]
@@ -57,12 +57,14 @@ class HybridRetriever:
 
         except Exception as e:
             logger.error(f"Failed to build BM25 index: {e}")
-            logger.warning("BM25 will not be available - falling back to semantic search only")
+            logger.warning(
+                "BM25 will not be available - falling back to semantic search only"
+            )
             self.bm25 = None
             self.bm25_documents = []
             self.bm25_metadatas = []
 
-    def keyword_search(self, query: str, k: int = 10) -> List[Dict]:
+    def keyword_search(self, query: str, k: int = 10) -> list[dict]:
         """
         Perform BM25 keyword-based search.
 
@@ -84,22 +86,26 @@ class HybridRetriever:
         scores = self.bm25.get_scores(tokenized_query)
 
         # Get top k results
-        top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:k]
+        top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[
+            :k
+        ]
 
         results = []
         for idx in top_indices:
             if scores[idx] > 0:  # Only include documents with non-zero scores
-                results.append({
-                    "text": self.bm25_documents[idx],
-                    "metadata": self.bm25_metadatas[idx],
-                    "score": float(scores[idx]),
-                    "method": "bm25"
-                })
+                results.append(
+                    {
+                        "text": self.bm25_documents[idx],
+                        "metadata": self.bm25_metadatas[idx],
+                        "score": float(scores[idx]),
+                        "method": "bm25",
+                    }
+                )
 
         logger.info(f"BM25 search returned {len(results)} results")
         return results
 
-    def semantic_search(self, query: str, k: int = 10) -> List[Dict]:
+    def semantic_search(self, query: str, k: int = 10) -> list[dict]:
         """
         Perform semantic vector search.
 
@@ -119,10 +125,8 @@ class HybridRetriever:
         return results
 
     def reciprocal_rank_fusion(
-        self,
-        results_list: List[List[Dict]],
-        k: int = 60
-    ) -> List[Dict]:
+        self, results_list: list[list[dict]], k: int = 60
+    ) -> list[dict]:
         """
         Combine multiple ranked lists using Reciprocal Rank Fusion.
 
@@ -147,7 +151,7 @@ class HybridRetriever:
                     doc_scores[doc_text] = {
                         "document": doc,
                         "rrf_score": 0,
-                        "methods": []
+                        "methods": [],
                     }
 
                 doc_scores[doc_text]["rrf_score"] += rrf_score
@@ -155,9 +159,7 @@ class HybridRetriever:
 
         # Sort by RRF score
         sorted_docs = sorted(
-            doc_scores.values(),
-            key=lambda x: x["rrf_score"],
-            reverse=True
+            doc_scores.values(), key=lambda x: x["rrf_score"], reverse=True
         )
 
         # Format results
@@ -170,7 +172,7 @@ class HybridRetriever:
 
         return combined_results
 
-    def retrieve(self, query: str, k: int = 5) -> List[Dict]:
+    def retrieve(self, query: str, k: int = 5) -> list[dict]:
         """
         Hybrid retrieval combining semantic and keyword search.
 
@@ -183,14 +185,16 @@ class HybridRetriever:
         """
         logger.info(f"Hybrid retrieval for query: '{query}'")
 
-        # Perform both types of search (retrieve more for fusion)
-        semantic_results = self.semantic_search(query, k=k*2)
-        keyword_results = self.keyword_search(query, k=k*2)
+        # Perform both types of search (retrieve 2x for better fusion coverage)
+        semantic_results = self.semantic_search(query, k=k * 2)
+        keyword_results = self.keyword_search(query, k=k * 2)
 
-        # Combine using RRF
-        combined_results = self.reciprocal_rank_fusion([semantic_results, keyword_results])
+        # Combine using Reciprocal Rank Fusion to balance both methods
+        combined_results = self.reciprocal_rank_fusion(
+            [semantic_results, keyword_results]
+        )
 
-        # Return top k
+        # Return top k after reranking
         final_results = combined_results[:k]
 
         logger.info(f"Hybrid retrieval returned {len(final_results)} results")
@@ -204,7 +208,7 @@ class HybridRetriever:
 
         return final_results
 
-    def format_context(self, documents: List[Dict]) -> str:
+    def format_context(self, documents: list[dict]) -> str:
         """
         Format retrieved documents as context for LLM.
 
@@ -239,7 +243,7 @@ def main():
 
     # Check Pinecone stats
     stats = retriever.vector_store.get_stats()
-    if stats['total_vectors'] == 0:
+    if stats["total_vectors"] == 0:
         print("\nPinecone index is empty. Upload documents first:")
         print("  python -m healthbot.retrieval.pinecone_store")
         return
@@ -250,9 +254,9 @@ def main():
     # Test query
     query = "What are the main causes and risk factors of type 2 diabetes?"
 
-    print("="*80)
+    print("=" * 80)
     print("HYBRID RETRIEVAL TEST")
-    print("="*80)
+    print("=" * 80)
     print(f"Query: {query}\n")
 
     # Retrieve documents
@@ -266,12 +270,12 @@ def main():
         print(f"  Condition: {doc.get('metadata', {}).get('condition', 'Unknown')}")
         print(f"  Text: {doc['text'][:150]}...")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("FORMATTED CONTEXT FOR LLM")
-    print("="*80)
+    print("=" * 80)
     context = retriever.format_context(results[:3])
     print(context[:500] + "...")
-    print("="*80)
+    print("=" * 80)
 
 
 if __name__ == "__main__":

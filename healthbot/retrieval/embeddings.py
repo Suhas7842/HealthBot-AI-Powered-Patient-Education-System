@@ -3,8 +3,8 @@ Embedding manager using HuggingFace sentence transformers.
 Handles text-to-vector conversion for semantic search.
 """
 
-from typing import List
 from sentence_transformers import SentenceTransformer
+
 from healthbot.config import settings
 from healthbot.logger import logger
 
@@ -29,7 +29,7 @@ class EmbeddingManager:
             logger.error(f"Failed to load embedding model: {e}")
             raise
 
-    def embed_text(self, text: str) -> List[float]:
+    def embed_text(self, text: str) -> list[float]:
         """
         Generate embedding for a single text.
 
@@ -50,7 +50,7 @@ class EmbeddingManager:
             logger.error(f"Embedding generation failed: {e}")
             raise
 
-    def embed_batch(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
+    def embed_batch(self, texts: list[str], batch_size: int = 32) -> list[list[float]]:
         """
         Generate embeddings for multiple texts efficiently.
 
@@ -70,7 +70,7 @@ class EmbeddingManager:
                 texts,
                 batch_size=batch_size,
                 show_progress_bar=True,
-                convert_to_numpy=True
+                convert_to_numpy=True,
             )
             return embeddings.tolist()
         except Exception as e:
@@ -95,9 +95,9 @@ def main():
     text = "Diabetes is a metabolic disorder characterized by high blood sugar."
     embedding = manager.embed_text(text)
 
-    print("="*80)
+    print("=" * 80)
     print("EMBEDDING MANAGER TEST")
-    print("="*80)
+    print("=" * 80)
     print(f"Model: {manager.model_name}")
     print(f"Embedding dimension: {manager.get_embedding_dimension()}")
     print(f"\nInput text: {text}")
@@ -108,11 +108,11 @@ def main():
     texts = [
         "Hypertension is high blood pressure.",
         "Asthma affects the airways in the lungs.",
-        "Heart disease refers to conditions affecting the heart."
+        "Heart disease refers to conditions affecting the heart.",
     ]
     embeddings = manager.embed_batch(texts)
     print(f"\nBatch embedding: {len(embeddings)} texts embedded")
-    print("="*80)
+    print("=" * 80)
 
 
 if __name__ == "__main__":

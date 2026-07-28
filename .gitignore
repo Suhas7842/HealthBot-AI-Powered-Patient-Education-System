@@ -64,6 +64,9 @@ deployment/.serverless/
 .coverage
 htmlcov/
 
+# Ruff
+.ruff_cache/
+
 # Misc
 *.bak
 *.tmp

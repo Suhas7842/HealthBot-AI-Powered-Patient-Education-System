@@ -147,10 +147,7 @@ curl http://localhost:8000/metrics
 ```python
 from healthbot.graph import healthbot_app
 
-result = healthbot_app.invoke({
-    "topic": "What causes hypertension?",
-    "messages": []
-})
+result = healthbot_app.invoke({"topic": "What causes hypertension?", "messages": []})
 
 print(result["summary"])
 ```
@@ -300,6 +297,7 @@ black healthbot/ api.py app.py
 ### Generate Graph Visualization
 ```python
 from healthbot.graph import visualize_graph
+
 visualize_graph("docs/workflow_graph.png")
 ```
 

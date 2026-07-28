@@ -4,7 +4,6 @@ Loads environment variables from .env or config.env files.
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -12,23 +11,23 @@ class Settings(BaseSettings):
 
     # LLM Configuration (OpenAI-compatible or Gemini)
     LLM_PROVIDER: str = "openai"  # "openai", "groq", or "gemini"
-    OPENAI_API_KEY: Optional[str] = None
+    OPENAI_API_KEY: str | None = None
     OPENAI_MODEL: str = "gpt-4o-mini"
     OPENAI_TEMPERATURE: float = 0.0
     OPENAI_MAX_TOKENS: int = 1000
-    OPENAI_BASE_URL: Optional[str] = None  # For Groq: https://api.groq.com/openai/v1
+    OPENAI_BASE_URL: str | None = None  # For Groq: https://api.groq.com/openai/v1
 
     # Google Gemini Configuration
-    GOOGLE_API_KEY: Optional[str] = None
+    GOOGLE_API_KEY: str | None = None
     GEMINI_MODEL: str = "gemini-2.0-flash"  # FREE tier, supports structured output
 
     # Pinecone Cloud Vector DB
-    PINECONE_API_KEY: Optional[str] = None
+    PINECONE_API_KEY: str | None = None
     PINECONE_ENVIRONMENT: str = "us-east-1"
     PINECONE_INDEX_NAME: str = "medical-knowledge"
 
     # Tavily Search (optional fallback)
-    TAVILY_API_KEY: Optional[str] = None
+    TAVILY_API_KEY: str | None = None
 
     # Application Settings
     LOG_LEVEL: str = "INFO"
@@ -51,7 +50,7 @@ class Settings(BaseSettings):
         env_file=[".env", "config.env"],
         env_file_encoding="utf-8",
         case_sensitive=True,
-        extra="ignore"
+        extra="ignore",
     )
 
 

@@ -3,24 +3,20 @@ LangGraph node functions for HealthBot workflow.
 Each node performs a specific step in the patient education pipeline.
 """
 
-from typing import Dict
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from healthbot.state import PatientState
-from healthbot.models import LLMWrapper
-from healthbot.tools import ToolSelector
-from healthbot.schemas import MedicalSummary, QuizQuestion, QuizEvaluation
-from healthbot.prompts import (
-    SYSTEM_PROMPT,
-    SUMMARY_PROMPT,
-    QUIZ_PROMPT,
-    EVALUATION_PROMPT
-)
-from healthbot.safety import (
-    check_emergency,
-    get_emergency_response
-)
-from healthbot.logger import log_node_execution, logger
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
+from healthbot.logger import log_node_execution, logger
+from healthbot.models import LLMWrapper
+from healthbot.prompts import (
+    EVALUATION_PROMPT,
+    QUIZ_PROMPT,
+    SUMMARY_PROMPT,
+    SYSTEM_PROMPT,
+)
+from healthbot.safety import check_emergency, get_emergency_response
+from healthbot.schemas import MedicalSummary, QuizEvaluation, QuizQuestion
+from healthbot.state import PatientState
+from healthbot.tools import ToolSelector
 
 # Initialize components (shared across nodes)
 llm_wrapper = LLMWrapper()
@@ -28,7 +24,7 @@ tool_selector = ToolSelector()
 
 
 @log_node_execution("collect_topic")
-def collect_patient_topic(state: PatientState) -> Dict:
+def collect_patient_topic(state: PatientState) -> dict:
     """
     Collect the health topic from patient and initialize conversation.
 
@@ -46,7 +42,7 @@ def collect_patient_topic(state: PatientState) -> Dict:
     # Initialize state
     initial_messages = [
         SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"I want to learn about: {topic}")
+        HumanMessage(content=f"I want to learn about: {topic}"),
     ]
 
     return {
@@ -57,12 +53,12 @@ def collect_patient_topic(state: PatientState) -> Dict:
         "node_latencies": {},
         "emergency_detected": False,
         "disclaimer_shown": False,
-        "confidence_score": 0.0
+        "confidence_score": 0.0,
     }
 
 
 @log_node_execution("check_safety")
-def check_safety_node(state: PatientState) -> Dict:
+def check_safety_node(state: PatientState) -> dict:
     """
     Check if query contains emergency keywords.
 
@@ -82,14 +78,14 @@ def check_safety_node(state: PatientState) -> Dict:
         return {
             "emergency_detected": True,
             "messages": state["messages"] + [AIMessage(content=emergency_message)],
-            "summary": emergency_message
+            "summary": emergency_message,
         }
 
     return {"emergency_detected": False}
 
 
 @log_node_execution("retrieve_knowledge")
-def retrieve_medical_knowledge(state: PatientState) -> Dict:
+def retrieve_medical_knowledge(state: PatientState) -> dict:
     """
     Retrieve relevant medical information using RAG or Tavily.
 
@@ -112,7 +108,7 @@ def retrieve_medical_knowledge(state: PatientState) -> Dict:
             "retrieved_docs": [],
             "retrieval_scores": [],
             "rag_context": "No relevant medical information was found for this topic.",
-            "tool_calls": state.get("tool_calls", 0) + 1
+            "tool_calls": state.get("tool_calls", 0) + 1,
         }
 
     # Extract documents and scores
@@ -122,18 +118,20 @@ def retrieve_medical_knowledge(state: PatientState) -> Dict:
     # Format context
     context = tool_selector.format_results(results)
 
-    logger.info(f"Retrieved {len(documents)} documents (avg score: {sum(scores)/len(scores):.3f})")
+    logger.info(
+        f"Retrieved {len(documents)} documents (avg score: {sum(scores) / len(scores):.3f})"
+    )
 
     return {
         "retrieved_docs": documents,
         "retrieval_scores": scores,
         "rag_context": context,
-        "tool_calls": state.get("tool_calls", 0) + 1
+        "tool_calls": state.get("tool_calls", 0) + 1,
     }
 
 
 @log_node_execution("generate_summary")
-def generate_grounded_summary(state: PatientState) -> Dict:
+def generate_grounded_summary(state: PatientState) -> dict:
     """
     Generate patient-friendly summary grounded in retrieved documents.
 
@@ -148,15 +146,10 @@ def generate_grounded_summary(state: PatientState) -> Dict:
 
     # Build prompt
     prompt = SUMMARY_PROMPT.format(
-        topic=topic,
-        rag_context=context,
-        schema=MedicalSummary.model_json_schema()
+        topic=topic, rag_context=context, schema=MedicalSummary.model_json_schema()
     )
 
-    messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=prompt)
-    ]
+    messages = [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=prompt)]
 
     # Generate structured summary
     try:
@@ -170,13 +163,13 @@ def generate_grounded_summary(state: PatientState) -> Dict:
 {summary_obj.condition}
 
 **Causes:**
-{chr(10).join(f'• {cause}' for cause in summary_obj.causes)}
+{chr(10).join(f"• {cause}" for cause in summary_obj.causes)}
 
 **Symptoms:**
-{chr(10).join(f'• {symptom}' for symptom in summary_obj.symptoms)}
+{chr(10).join(f"• {symptom}" for symptom in summary_obj.symptoms)}
 
 **Treatment:**
-{chr(10).join(f'• {treatment}' for treatment in summary_obj.treatment)}
+{chr(10).join(f"• {treatment}" for treatment in summary_obj.treatment)}
 
 {summary_obj.warning}
 """
@@ -186,24 +179,19 @@ def generate_grounded_summary(state: PatientState) -> Dict:
 
         return {
             "summary": summary_text.strip(),
-            "token_usage": {
-                "summary_tokens": token_count
-            },
+            "token_usage": {"summary_tokens": token_count},
             "confidence_score": 0.85,  # High confidence for structured output
-            "disclaimer_shown": True
+            "disclaimer_shown": True,
         }
 
     except Exception as e:
         logger.error(f"Failed to generate summary: {e}")
         fallback = f"Unable to generate summary for {topic}. Please consult a healthcare professional."
-        return {
-            "summary": fallback,
-            "confidence_score": 0.0
-        }
+        return {"summary": fallback, "confidence_score": 0.0}
 
 
 @log_node_execution("present_summary")
-def present_summary_to_patient(state: PatientState) -> Dict:
+def present_summary_to_patient(state: PatientState) -> dict:
     """
     Display the generated summary to the patient.
 
@@ -215,17 +203,17 @@ def present_summary_to_patient(state: PatientState) -> Dict:
     """
     summary = state.get("summary", "")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("MEDICAL INFORMATION SUMMARY")
-    print("="*80)
+    print("=" * 80)
     print(summary)
-    print("="*80)
+    print("=" * 80)
 
     return {}
 
 
 @log_node_execution("wait_for_quiz")
-def wait_for_quiz_ready(state: PatientState) -> Dict:
+def wait_for_quiz_ready(state: PatientState) -> dict:
     """
     Pause and ask if patient is ready for the quiz.
 
@@ -240,7 +228,7 @@ def wait_for_quiz_ready(state: PatientState) -> Dict:
 
 
 @log_node_execution("generate_quiz")
-def create_quiz_question(state: PatientState) -> Dict:
+def create_quiz_question(state: PatientState) -> dict:
     """
     Generate a multiple-choice quiz question from the summary.
 
@@ -254,14 +242,10 @@ def create_quiz_question(state: PatientState) -> Dict:
 
     # Build prompt
     prompt = QUIZ_PROMPT.format(
-        summary=summary,
-        schema=QuizQuestion.model_json_schema()
+        summary=summary, schema=QuizQuestion.model_json_schema()
     )
 
-    messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=prompt)
-    ]
+    messages = [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=prompt)]
 
     # Generate quiz
     try:
@@ -279,19 +263,16 @@ D) {quiz_obj.choices[3]}
 
         return {
             "quiz": quiz_text.strip(),
-            "quiz_ground_truth": f"{quiz_obj.correct_answer}: {quiz_obj.explanation}"
+            "quiz_ground_truth": f"{quiz_obj.correct_answer}: {quiz_obj.explanation}",
         }
 
     except Exception as e:
         logger.error(f"Failed to generate quiz: {e}")
-        return {
-            "quiz": "Unable to generate quiz question.",
-            "quiz_ground_truth": ""
-        }
+        return {"quiz": "Unable to generate quiz question.", "quiz_ground_truth": ""}
 
 
 @log_node_execution("present_quiz")
-def present_quiz_to_patient(state: PatientState) -> Dict:
+def present_quiz_to_patient(state: PatientState) -> dict:
     """
     Display the quiz question to the patient.
 
@@ -303,17 +284,17 @@ def present_quiz_to_patient(state: PatientState) -> Dict:
     """
     quiz = state.get("quiz", "")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("COMPREHENSION QUIZ")
-    print("="*80)
+    print("=" * 80)
     print(quiz)
-    print("="*80)
+    print("=" * 80)
 
     return {}
 
 
 @log_node_execution("collect_quiz_answer")
-def collect_patient_answer(state: PatientState) -> Dict:
+def collect_patient_answer(state: PatientState) -> dict:
     """
     Collect the patient's quiz answer.
 
@@ -329,7 +310,7 @@ def collect_patient_answer(state: PatientState) -> Dict:
 
 
 @log_node_execution("evaluate_quiz")
-def evaluate_quiz_response(state: PatientState) -> Dict:
+def evaluate_quiz_response(state: PatientState) -> dict:
     """
     Grade the patient's quiz answer using LLM.
 
@@ -349,13 +330,10 @@ def evaluate_quiz_response(state: PatientState) -> Dict:
         question=quiz,
         correct_answer=ground_truth,
         patient_answer=patient_answer,
-        schema=QuizEvaluation.model_json_schema()
+        schema=QuizEvaluation.model_json_schema(),
     )
 
-    messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=prompt)
-    ]
+    messages = [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=prompt)]
 
     # Generate evaluation
     try:
@@ -378,7 +356,7 @@ def evaluate_quiz_response(state: PatientState) -> Dict:
 
 
 @log_node_execution("present_grade")
-def present_grade_to_patient(state: PatientState) -> Dict:
+def present_grade_to_patient(state: PatientState) -> dict:
     """
     Display the quiz grade and feedback to the patient.
 
@@ -390,17 +368,17 @@ def present_grade_to_patient(state: PatientState) -> Dict:
     """
     grade = state.get("grade", "")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("QUIZ EVALUATION")
-    print("="*80)
+    print("=" * 80)
     print(grade)
-    print("="*80)
+    print("=" * 80)
 
     return {}
 
 
 @log_node_execution("ask_continue")
-def ask_for_new_topic(state: PatientState) -> Dict:
+def ask_for_new_topic(state: PatientState) -> dict:
     """
     Ask if patient wants to learn about another topic.
 
@@ -410,7 +388,11 @@ def ask_for_new_topic(state: PatientState) -> Dict:
     Returns:
         Updated state with continuation decision
     """
-    choice = input("\nWould you like to learn about another health topic? (yes/no): ").strip().lower()
+    choice = (
+        input("\nWould you like to learn about another health topic? (yes/no): ")
+        .strip()
+        .lower()
+    )
 
     if choice == "yes":
         # Reset state for new topic
@@ -425,12 +407,11 @@ def ask_for_new_topic(state: PatientState) -> Dict:
             "retrieval_scores": [],
             "rag_context": "",
             "messages": [],
-            "continue": True
+            "continue": True,
         }
     else:
         return {
             "continue": False,
-            "messages": state.get("messages", []) + [
-                AIMessage(content="Thank you for using HealthBot. Stay healthy!")
-            ]
+            "messages": state.get("messages", [])
+            + [AIMessage(content="Thank you for using HealthBot. Stay healthy!")],
         }

@@ -3,18 +3,18 @@ LLM wrapper with error handling, retries, and structured output support.
 Provides robust interface to OpenAI API for HealthBot.
 """
 
-from typing import List, Optional, Type
-from pydantic import BaseModel
-from langchain_openai import ChatOpenAI
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import BaseMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
+from openai import APIError, APITimeoutError, RateLimitError
+from pydantic import BaseModel
 from tenacity import (
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type
 )
-from openai import APIError, RateLimitError, APITimeoutError
+
 from healthbot.config import settings
 from healthbot.logger import logger
 
@@ -32,9 +32,9 @@ class LLMWrapper:
 
     def __init__(
         self,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        max_tokens: Optional[int] = None
+        model: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
     ):
         """
         Initialize LLM wrapper with support for OpenAI, Groq, or Gemini.
@@ -44,7 +44,9 @@ class LLMWrapper:
             temperature: Sampling temperature (defaults to config)
             max_tokens: Max tokens to generate (defaults to config)
         """
-        self.temperature = temperature if temperature is not None else settings.OPENAI_TEMPERATURE
+        self.temperature = (
+            temperature if temperature is not None else settings.OPENAI_TEMPERATURE
+        )
         self.max_tokens = max_tokens or settings.OPENAI_MAX_TOKENS
         self.provider = settings.LLM_PROVIDER.lower()
 
@@ -55,9 +57,11 @@ class LLMWrapper:
                 model=self.model,
                 temperature=self.temperature,
                 max_output_tokens=self.max_tokens,  # Gemini uses max_output_tokens not max_tokens
-                google_api_key=settings.GOOGLE_API_KEY
+                google_api_key=settings.GOOGLE_API_KEY,
             )
-            logger.info(f"LLM initialized: provider=Gemini, model={self.model}, max_output_tokens={self.max_tokens}")
+            logger.info(
+                f"LLM initialized: provider=Gemini, model={self.model}, max_output_tokens={self.max_tokens}"
+            )
         else:
             # OpenAI or Groq (both use OpenAI-compatible API)
             self.model = model or settings.OPENAI_MODEL
@@ -66,7 +70,7 @@ class LLMWrapper:
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
                 openai_api_key=settings.OPENAI_API_KEY,
-                base_url=settings.OPENAI_BASE_URL
+                base_url=settings.OPENAI_BASE_URL,
             )
             logger.info(
                 f"LLM initialized: provider={self.provider}, model={self.model}, "
@@ -77,9 +81,9 @@ class LLMWrapper:
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type((APIError, RateLimitError, APITimeoutError)),
-        reraise=True
+        reraise=True,
     )
-    def invoke(self, messages: List[BaseMessage]) -> str:
+    def invoke(self, messages: list[BaseMessage]) -> str:
         """
         Invoke LLM with retry logic.
 
@@ -99,7 +103,7 @@ class LLMWrapper:
             content = response.content
 
             # Log token usage if available
-            if hasattr(response, 'usage_metadata') and response.usage_metadata:
+            if hasattr(response, "usage_metadata") and response.usage_metadata:
                 usage = response.usage_metadata
                 logger.info(
                     f"LLM call completed | "
@@ -126,12 +130,10 @@ class LLMWrapper:
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type((APIError, RateLimitError, APITimeoutError)),
-        reraise=True
+        reraise=True,
     )
     def invoke_structured(
-        self,
-        messages: List[BaseMessage],
-        schema: Type[BaseModel]
+        self, messages: list[BaseMessage], schema: type[BaseModel]
     ) -> BaseModel:
         """
         Invoke LLM with structured output using Pydantic schema.
@@ -194,27 +196,28 @@ class LLMWrapper:
         return {
             "model": self.model,
             "temperature": self.temperature,
-            "max_tokens": self.max_tokens
+            "max_tokens": self.max_tokens,
         }
 
 
 def main():
     """Test LLM wrapper functionality."""
-    from langchain_core.messages import SystemMessage, HumanMessage
+    from langchain_core.messages import HumanMessage, SystemMessage
+
     from healthbot.schemas import MedicalSummary
 
     wrapper = LLMWrapper()
 
-    print("="*80)
+    print("=" * 80)
     print("LLM WRAPPER TEST")
-    print("="*80)
+    print("=" * 80)
     print(f"Configuration: {wrapper.get_config()}")
 
     # Test 1: Basic invocation
     print("\nTest 1: Basic text generation")
     messages = [
         SystemMessage(content="You are a helpful medical education assistant."),
-        HumanMessage(content="In one sentence, what is diabetes?")
+        HumanMessage(content="In one sentence, what is diabetes?"),
     ]
 
     try:
@@ -226,14 +229,18 @@ def main():
     # Test 2: Structured output
     print("\nTest 2: Structured output (MedicalSummary)")
     messages = [
-        SystemMessage(content="You are a medical education assistant. Return a structured summary."),
-        HumanMessage(content="""Create a brief medical summary for diabetes with:
+        SystemMessage(
+            content="You are a medical education assistant. Return a structured summary."
+        ),
+        HumanMessage(
+            content="""Create a brief medical summary for diabetes with:
         - title: "Diabetes Mellitus"
         - condition: brief description
         - causes: list of 2 causes
         - symptoms: list of 3 symptoms
         - treatment: list of 2 treatments
-        Return as JSON matching the MedicalSummary schema.""")
+        Return as JSON matching the MedicalSummary schema."""
+        ),
     ]
 
     try:
@@ -245,7 +252,7 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
 
-    print("="*80)
+    print("=" * 80)
 
 
 if __name__ == "__main__":

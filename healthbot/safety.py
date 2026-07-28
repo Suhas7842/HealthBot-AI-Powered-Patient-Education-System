@@ -3,10 +3,8 @@ Medical safety module for emergency detection and disclaimers.
 Ensures responsible handling of health-related queries.
 """
 
-from typing import List
-
 # Emergency keywords that require immediate medical attention
-EMERGENCY_KEYWORDS: List[str] = [
+EMERGENCY_KEYWORDS: list[str] = [
     "chest pain",
     "heart attack",
     "difficulty breathing",

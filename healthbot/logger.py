@@ -5,16 +5,16 @@ Provides observability for LangGraph workflow execution.
 
 import logging
 import time
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable
-from healthbot.config import settings
 
+from healthbot.config import settings
 
 # Configure logging
 logging.basicConfig(
     level=settings.LOG_LEVEL,
     format="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 
 logger = logging.getLogger("healthbot")
@@ -30,6 +30,7 @@ def log_node_execution(node_name: str) -> Callable:
     Returns:
         Decorated function with logging and timing
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(state):
@@ -40,10 +41,7 @@ def log_node_execution(node_name: str) -> Callable:
                 result = func(state)
                 latency = time.time() - start_time
 
-                logger.info(
-                    f"[END] Node: {node_name} | "
-                    f"Latency: {latency:.2f}s"
-                )
+                logger.info(f"[END] Node: {node_name} | Latency: {latency:.2f}s")
 
                 # Track latency in state if node_latencies exists
                 if isinstance(result, dict) and "node_latencies" in result:
@@ -58,9 +56,10 @@ def log_node_execution(node_name: str) -> Callable:
                 logger.error(
                     f"[ERROR] Node: {node_name} | "
                     f"Latency: {latency:.2f}s | "
-                    f"Error: {str(e)}"
+                    f"Error: {e!s}"
                 )
                 raise
 
         return wrapper
+
     return decorator
