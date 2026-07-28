@@ -163,7 +163,7 @@ Provide a clear, accurate answer based only on the sources above."""
                 "ragas_scores": ragas_result.to_pandas().to_dict('records')
             }
 
-            logger.info(f"RAGAS Evaluation Complete!")
+            logger.info("RAGAS Evaluation Complete!")
             logger.info(f"  Faithfulness: {scores['faithfulness']:.3f}")
             logger.info(f"  Answer Relevancy: {scores['answer_relevancy']:.3f}")
             logger.info(f"  Context Recall: {scores['context_recall']:.3f}")
@@ -254,7 +254,7 @@ def main():
         else:
             summary = results["summary"]
             print(f"Test cases evaluated: {summary['total_cases']}")
-            print(f"\nRAGAS Scores:")
+            print("\nRAGAS Scores:")
             for metric, score in summary["metrics"].items():
                 print(f"  • {metric.replace('_', ' ').title()}: {score:.3f}")
             print(f"\n  Average Score: {summary['average_score']:.3f}")

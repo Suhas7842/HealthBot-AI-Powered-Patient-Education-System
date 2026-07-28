@@ -154,7 +154,7 @@ def main():
         print("DOCUMENT PROCESSING SUMMARY")
         print("="*80)
         print(f"Total chunks: {len(chunks)}")
-        print(f"\nSample chunk:")
+        print("\nSample chunk:")
         print(f"  PMID: {chunks[0]['pmid']}")
         print(f"  Condition: {chunks[0]['condition']}")
         print(f"  Text length: {len(chunks[0]['text'])} chars")

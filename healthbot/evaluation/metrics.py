@@ -4,7 +4,6 @@ Tracks latency, retrieval quality, cost, and user experience metrics.
 """
 
 import json
-import time
 from typing import List, Dict, Optional
 from datetime import datetime
 from pathlib import Path
@@ -205,14 +204,14 @@ class HealthBotMetrics:
 
         # Usage stats
         usage = metrics["usage"]
-        print(f"\n📊 Usage Statistics")
+        print("\n📊 Usage Statistics")
         print(f"  Total Runs: {usage['total_runs']}")
         print(f"  Avg Tool Calls per Run: {usage['mean_tool_calls']:.2f}")
         print(f"  Emergency Detection Rate: {usage['emergency_rate']*100:.1f}%")
 
         # Latency stats
         latency = metrics["latency"]
-        print(f"\n⚡ Latency")
+        print("\n⚡ Latency")
         print(f"  Mean: {latency['mean']:.2f}s")
         print(f"  Median: {latency['median']:.2f}s")
         print(f"  P95: {latency['p95']:.2f}s")
@@ -221,14 +220,14 @@ class HealthBotMetrics:
 
         # Retrieval stats
         retrieval = metrics["retrieval"]
-        print(f"\n🔍 Retrieval Quality")
+        print("\n🔍 Retrieval Quality")
         print(f"  Mean Relevance Score: {retrieval['mean_score']:.3f}")
         print(f"  Median Score: {retrieval['median_score']:.3f}")
         print(f"  RAG Hit Rate: {retrieval['rag_hit_rate']*100:.1f}%")
 
         # Cost stats
         cost = metrics["cost"]
-        print(f"\n💰 Cost Estimates")
+        print("\n💰 Cost Estimates")
         print(f"  Mean Tokens per Run: {cost['mean_tokens']:.0f}")
         print(f"  Total Tokens: {cost['total_tokens']:,}")
         print(f"  Estimated Total Cost: ${cost['estimated_cost_usd']:.4f}")
@@ -236,7 +235,7 @@ class HealthBotMetrics:
         # Time period
         period = metrics["period"]
         if period["start"] and period["end"]:
-            print(f"\n📅 Period")
+            print("\n📅 Period")
             print(f"  From: {period['start'][:19]}")  # Trim microseconds
             print(f"  To: {period['end'][:19]}")
 

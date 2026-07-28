@@ -242,7 +242,7 @@ def main():
     print("="*80)
     print(f"Total articles: {len(df)}")
     print(f"Conditions: {df['condition'].nunique()}")
-    print(f"\nArticles per condition:")
+    print("\nArticles per condition:")
     print(df['condition'].value_counts().to_string())
     print("="*80)
 

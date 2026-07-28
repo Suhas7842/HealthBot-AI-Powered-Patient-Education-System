@@ -1,11 +1,11 @@
 """
-Hybrid retrieval combining semantic search (ChromaDB) and keyword search (BM25).
+Hybrid retrieval combining semantic search (Pinecone) and keyword search (BM25).
 Uses reciprocal rank fusion to combine results from both methods.
 """
 
 from typing import List, Dict
 from rank_bm25 import BM25Okapi
-from healthbot.retrieval.vector_store import MedicalVectorStore
+from healthbot.retrieval.pinecone_store import PineconeVectorStore
 from healthbot.data.processor import DocumentProcessor
 from healthbot.logger import logger
 
@@ -14,31 +14,40 @@ class HybridRetriever:
     """Combines semantic and keyword-based retrieval for better results."""
 
     def __init__(self):
-        """Initialize hybrid retriever with vector store and BM25."""
-        # Initialize vector store for semantic search
-        self.vector_store = MedicalVectorStore()
+        """Initialize hybrid retriever with Pinecone vector store and BM25."""
+        # Initialize Pinecone vector store for semantic search
+        self.vector_store = PineconeVectorStore()
 
-        # Load documents for BM25 indexing
+        # Load documents for BM25 indexing from local data
         self._build_bm25_index()
 
     def _build_bm25_index(self) -> None:
-        """Build BM25 index from vector store documents."""
-        logger.info("Building BM25 keyword index")
+        """Build BM25 index from local processed documents."""
+        logger.info("Building BM25 keyword index from local data")
 
         try:
-            # Get all documents from vector store
-            # Note: For large collections, you'd want a more efficient approach
-            collection_data = self.vector_store.collection.get()
+            # Load and process documents from local parquet file for BM25
+            processor = DocumentProcessor()
+            chunks = processor.process_knowledge_base()
 
-            if not collection_data["documents"]:
-                logger.warning("No documents found in vector store for BM25 indexing")
+            if not chunks:
+                logger.warning("No documents found for BM25 indexing")
                 self.bm25 = None
                 self.bm25_documents = []
                 self.bm25_metadatas = []
                 return
 
-            self.bm25_documents = collection_data["documents"]
-            self.bm25_metadatas = collection_data["metadatas"]
+            # Extract text and metadata from chunks
+            self.bm25_documents = [chunk['text'] for chunk in chunks]
+            self.bm25_metadatas = [
+                {
+                    'pmid': chunk.get('pmid', ''),
+                    'title': chunk.get('title', ''),
+                    'condition': chunk.get('condition', ''),
+                    'chunk_id': chunk.get('chunk_id', '')
+                }
+                for chunk in chunks
+            ]
 
             # Tokenize documents for BM25
             tokenized_docs = [doc.lower().split() for doc in self.bm25_documents]
@@ -48,6 +57,7 @@ class HybridRetriever:
 
         except Exception as e:
             logger.error(f"Failed to build BM25 index: {e}")
+            logger.warning("BM25 will not be available - falling back to semantic search only")
             self.bm25 = None
             self.bm25_documents = []
             self.bm25_metadatas = []
@@ -227,16 +237,21 @@ def main():
     """Test hybrid retrieval."""
     retriever = HybridRetriever()
 
-    if retriever.vector_store.collection.count() == 0:
-        print("\nVector store is empty. Build it first:")
-        print("  python -m healthbot.retrieval.vector_store build")
+    # Check Pinecone stats
+    stats = retriever.vector_store.get_stats()
+    if stats['total_vectors'] == 0:
+        print("\nPinecone index is empty. Upload documents first:")
+        print("  python -m healthbot.retrieval.pinecone_store")
         return
+
+    print(f"\nPinecone stats: {stats['total_vectors']} vectors")
+    print(f"BM25 index: {len(retriever.bm25_documents)} documents\n")
 
     # Test query
     query = "What are the main causes and risk factors of type 2 diabetes?"
 
     print("="*80)
-    print(f"HYBRID RETRIEVAL TEST")
+    print("HYBRID RETRIEVAL TEST")
     print("="*80)
     print(f"Query: {query}\n")
 
