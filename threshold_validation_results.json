@@ -1,0 +1,13 @@
+{
+  "validation": {
+    "thresholds": {
+      "MIN_DOCS": 3,
+      "MIN_AVG_SCORE": 0.015,
+      "MIN_SOURCES": 2
+    },
+    "passed": 10,
+    "failed": 0,
+    "pass_rate": 1.0,
+    "failure_reasons": {}
+  }
+}
