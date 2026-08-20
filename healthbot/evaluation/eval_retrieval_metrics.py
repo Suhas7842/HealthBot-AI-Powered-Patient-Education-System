@@ -1,8 +1,21 @@
 """
 Retrieval metrics evaluation script for HealthBot.
 
-Measures proper IR metrics: Recall@K, MRR, nDCG@K, Hit Rate, Precision@K
-using ground truth relevance judgments based on condition matching.
+**Tier 1: Primary Evaluation Script**
+
+**Purpose:** Evaluate retrieval quality using proper Information Retrieval (IR) metrics
+
+**When to Use:**
+- Testing changes to retrieval algorithms (hybrid weights, BM25 tuning, embeddings)
+- Evaluating reranker impact
+- Establishing retrieval quality baselines
+- Comparing different retrieval configurations
+
+**Metrics:** Recall@K, MRR, nDCG@K, Hit Rate, Precision@K
+
+**Ground Truth:** Uses condition-based document matching from knowledge base
+
+For complete evaluation guidance, see docs/EVALUATION_GUIDE.md
 """
 
 import json

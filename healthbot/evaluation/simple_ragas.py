@@ -1,11 +1,24 @@
 """
 Simplified RAGAS-style evaluation without external dependencies.
 
-Uses the existing LLM to judge:
-- Faithfulness: Is the answer grounded in retrieved context?
-- Answer Relevancy: Does the answer address the question?
+**Tier 1: Primary Evaluation Script**
 
-This avoids RAGAS dependency issues while providing similar metrics.
+**Purpose:** Evaluate answer generation quality using RAGAS-style metrics
+
+**When to Use:**
+- Testing changes to LLM prompts
+- Evaluating generation quality improvements
+- Measuring faithfulness (hallucination prevention)
+- Assessing answer relevancy
+
+**Metrics:**
+- Faithfulness (0-1): Is the answer grounded in retrieved context?
+- Answer Relevancy (0-1): Does the answer address the question?
+
+**Method:** Uses existing LLM as judge (no external RAGAS dependencies)
+
+This avoids RAGAS library dependency issues while providing core metrics.
+For complete evaluation guidance, see docs/EVALUATION_GUIDE.md
 """
 
 import json

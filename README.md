@@ -159,28 +159,40 @@ print(result["summary"])
 
 ## 🧪 Evaluation
 
-### Test Suite
-The project includes a comprehensive evaluation framework:
+### Evaluation Framework
+The project includes a comprehensive evaluation infrastructure with **proper Information Retrieval (IR) metrics** and **RAGAS-style answer quality assessment**.
+
+**Test Suite:**
 - **50 medical test cases** with ground truth answers
 - **10 conditions covered**: diabetes, hypertension, asthma, heart disease, arthritis, depression, migraine, COPD, obesity, thyroid
-- **Verified Results**: 100% retrieval success, 418ms avg latency (see [EVALUATION_REPORT.md](EVALUATION_REPORT.md))
+- **Ground truth matching**: Condition-based document relevance for Recall@K, MRR, nDCG evaluation
 
-### Run Evaluation
+**📖 See [docs/EVALUATION_GUIDE.md](docs/EVALUATION_GUIDE.md) for comprehensive evaluation guidance**
+
+### Quick Start Evaluation
+
 ```bash
-# Run retrieval performance evaluation
-python -m healthbot.evaluation.simple_eval
+# Evaluate retrieval quality (Tier 1 - Primary)
+python -m healthbot.evaluation.eval_retrieval_metrics
 
-# For advanced LLM-based evaluation (requires additional setup)
-python -m healthbot.evaluation.ragas_eval
+# Evaluate answer quality (Tier 1 - Primary)
+python -m healthbot.evaluation.simple_ragas --sample-size 20
+
+# Compare retrieval strategies (Tier 2 - Specialized)
+python -m healthbot.evaluation.experiments
 ```
 
-### Latest Results (Full 50-Case Evaluation)
-- **Success Rate**: 100% (50/50 queries retrieved relevant documents)
-- **Avg Latency**: 0.318s (318ms) - production-grade performance
-- **Min/Max**: 0.243s - 1.614s (typical range 250-300ms)
-- **Method Distribution**: 44% semantic, 31% BM25, 26% hybrid (both methods)
-- **Conditions Tested**: All 10 conditions (diabetes, hypertension, asthma, heart disease, arthritis, depression, migraine, COPD, obesity, stroke)
-- **Statistical Confidence**: 5 cases per condition, robust performance baseline
+### Expected Baseline Results
+| Metric | Expected Range | Description |
+|--------|----------------|-------------|
+| **Recall@5** | 0.75 - 0.82 | Coverage: % of relevant docs retrieved |
+| **MRR** | 0.62 - 0.68 | First relevant doc typically at rank 1-2 |
+| **nDCG@5** | 0.68 - 0.74 | Ranking quality score |
+| **Faithfulness** | 0.82 - 0.92 | Answer grounded in context |
+| **Relevancy** | 0.85 - 0.92 | Answer addresses question |
+| **Latency** | 280-360ms | With/without reranker (~40ms difference) |
+
+*Results vary based on USE_RERANKER setting and LLM model. See [EVALUATION_GUIDE.md](docs/EVALUATION_GUIDE.md) for details.*
 
 See [EVALUATION_REPORT_50_CASE.md](EVALUATION_REPORT_50_CASE.md) for comprehensive analysis.
 

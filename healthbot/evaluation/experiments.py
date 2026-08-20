@@ -1,13 +1,25 @@
 """
 Experiment comparison of retrieval strategies.
 
-Compares:
+**Tier 2: Specialized Analysis Script**
+
+**Purpose:** Compare 4 different retrieval strategies side-by-side
+
+**When to Use:**
+- Running ablation studies (which components matter most?)
+- Comparing retrieval approaches for research
+- Testing the impact of adding reranking
+- Demonstrating retrieval strategy tradeoffs
+
+**Strategies Compared:**
 1. Dense-only (semantic search via Pinecone)
 2. BM25-only (keyword search)
 3. Hybrid (RRF fusion)
 4. Hybrid + Reranker (with cross-encoder)
 
-Measures: Recall@K, MRR, nDCG, Latency
+**Metrics:** Recall@K, MRR, nDCG, Hit Rate, Latency
+
+For complete evaluation guidance, see docs/EVALUATION_GUIDE.md
 """
 
 import json
