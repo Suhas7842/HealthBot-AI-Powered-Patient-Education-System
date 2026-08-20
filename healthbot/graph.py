@@ -17,10 +17,12 @@ from healthbot.nodes import (
     create_quiz_question,
     evaluate_quiz_response,
     generate_grounded_summary,
+    no_evidence_fallback,
     present_grade_to_patient,
     present_quiz_to_patient,
     present_summary_to_patient,
     retrieve_medical_knowledge,
+    validate_evidence,
     wait_for_quiz_ready,
 )
 from healthbot.state import PatientState
@@ -40,6 +42,29 @@ def decide_safety_path(state: PatientState) -> Literal["emergency_exit", "retrie
         logger.warning("Emergency detected - exiting workflow")
         return "emergency_exit"
     return "retrieve"
+
+
+def decide_evidence_path(
+    state: PatientState,
+) -> Literal["generate_summary", "no_evidence_fallback"]:
+    """
+    Decide whether to generate summary or use fallback based on evidence quality.
+
+    This prevents hallucination by validating retrieved context before generation.
+
+    Args:
+        state: Current workflow state
+
+    Returns:
+        Next node name
+    """
+    if state.get("evidence_valid", True):  # Default to True for backward compatibility
+        logger.info("Evidence validation passed - proceeding to generation")
+        return "generate_summary"
+    else:
+        reason = state.get("validation_reason", "unknown")
+        logger.warning(f"Evidence validation failed: {reason} - using fallback")
+        return "no_evidence_fallback"
 
 
 def decide_continue(state: PatientState) -> Literal["collect_topic", "end"]:
@@ -67,7 +92,9 @@ workflow = StateGraph(PatientState)
 workflow.add_node("collect_topic", collect_patient_topic)
 workflow.add_node("check_safety", check_safety_node)
 workflow.add_node("retrieve", retrieve_medical_knowledge)
+workflow.add_node("validate_evidence", validate_evidence)
 workflow.add_node("generate_summary", generate_grounded_summary)
+workflow.add_node("no_evidence_fallback", no_evidence_fallback)
 workflow.add_node("present_summary", present_summary_to_patient)
 workflow.add_node("wait_quiz", wait_for_quiz_ready)
 workflow.add_node("generate_quiz", create_quiz_question)
@@ -94,9 +121,25 @@ workflow.add_conditional_edges(
 # Emergency path: bypass RAG and end immediately with emergency message
 workflow.add_edge("emergency_exit", END)
 
-# Normal educational flow: retrieve → generate → present → quiz → evaluate → repeat
-workflow.add_edge("retrieve", "generate_summary")  # RAG retrieval feeds into summary
+# Normal educational flow: retrieve → validate → generate → present → quiz → evaluate → repeat
+# Evidence validation prevents hallucination by checking retrieval quality
+workflow.add_edge("retrieve", "validate_evidence")
+
+# Evidence routing: valid evidence proceeds to generation, insufficient triggers fallback
+workflow.add_conditional_edges(
+    "validate_evidence",
+    decide_evidence_path,
+    {
+        "generate_summary": "generate_summary",  # High-quality evidence → full workflow
+        "no_evidence_fallback": "no_evidence_fallback",  # Low-quality → safe fallback
+    },
+)
+
+# Normal path: generate and present summary, then quiz
 workflow.add_edge("generate_summary", "present_summary")
+
+# Fallback path: skip quiz, go directly to ask_continue
+workflow.add_edge("no_evidence_fallback", "ask_continue")
 workflow.add_edge("present_summary", "wait_quiz")
 workflow.add_edge("wait_quiz", "generate_quiz")  # Quiz based on presented summary
 workflow.add_edge("generate_quiz", "present_quiz")
@@ -159,6 +202,8 @@ def run_healthbot():
         "token_usage": {},
         "emergency_detected": False,
         "disclaimer_shown": False,
+        "evidence_valid": True,  # Tracks evidence validation status
+        "validation_reason": "",  # Explains validation result
     }
 
     try:

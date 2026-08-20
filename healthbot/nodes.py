@@ -150,6 +150,130 @@ def retrieve_medical_knowledge(state: PatientState) -> dict:
     }
 
 
+@log_node_execution("validate_evidence")
+def validate_evidence(state: PatientState) -> dict:
+    """
+    Validate retrieved evidence quality before generation.
+
+    Prevents hallucination by checking if retrieved context is sufficient
+    for generation. Returns validation status that controls routing.
+
+    Validation criteria:
+    1. Minimum document count (≥3 documents)
+    2. Minimum relevance score threshold (avg score ≥0.015)
+    3. Context diversity (not all from single source)
+
+    Args:
+        state: Current workflow state with retrieved_docs and retrieval_scores
+
+    Returns:
+        Updated state with:
+        - evidence_valid: bool (True if passes validation)
+        - validation_reason: str (explanation if failed)
+    """
+    retrieved_docs = state.get("retrieved_docs", [])
+    retrieval_scores = state.get("retrieval_scores", [])
+
+    # Validation thresholds
+    MIN_DOCS = 3
+    MIN_AVG_SCORE = 0.015  # RRF score threshold
+    MIN_SOURCES = 2  # At least 2 different sources
+
+    logger.info(f"Validating evidence: {len(retrieved_docs)} docs retrieved")
+
+    # Check 1: Minimum document count
+    if len(retrieved_docs) < MIN_DOCS:
+        reason = f"Insufficient documents: found {len(retrieved_docs)}, need ≥{MIN_DOCS}"
+        logger.warning(f"Evidence validation failed: {reason}")
+        return {
+            "evidence_valid": False,
+            "validation_reason": reason,
+        }
+
+    # Check 2: Minimum relevance score
+    if retrieval_scores:
+        avg_score = sum(retrieval_scores) / len(retrieval_scores)
+        if avg_score < MIN_AVG_SCORE:
+            reason = f"Low relevance scores: avg={avg_score:.4f}, threshold={MIN_AVG_SCORE}"
+            logger.warning(f"Evidence validation failed: {reason}")
+            return {
+                "evidence_valid": False,
+                "validation_reason": reason,
+            }
+    else:
+        reason = "No relevance scores available"
+        logger.warning(f"Evidence validation failed: {reason}")
+        return {
+            "evidence_valid": False,
+            "validation_reason": reason,
+        }
+
+    # Check 3: Source diversity (use PMID or title)
+    unique_sources = set()
+    for doc in retrieved_docs:
+        metadata = doc.get("metadata", {})
+        source_id = metadata.get("pmid") or metadata.get("title") or doc.get("text", "")[:50]
+        unique_sources.add(source_id)
+
+    if len(unique_sources) < MIN_SOURCES:
+        reason = f"Insufficient source diversity: {len(unique_sources)} unique sources, need ≥{MIN_SOURCES}"
+        logger.warning(f"Evidence validation failed: {reason}")
+        return {
+            "evidence_valid": False,
+            "validation_reason": reason,
+        }
+
+    # All checks passed
+    logger.info(
+        f"Evidence validation passed: {len(retrieved_docs)} docs, "
+        f"avg_score={avg_score:.4f}, {len(unique_sources)} sources"
+    )
+    return {
+        "evidence_valid": True,
+        "validation_reason": "Sufficient evidence quality",
+    }
+
+
+@log_node_execution("no_evidence_fallback")
+def no_evidence_fallback(state: PatientState) -> dict:
+    """
+    Fallback response when evidence validation fails.
+
+    Prevents hallucination by explicitly stating when retrieved context
+    is insufficient, rather than generating a potentially incorrect answer.
+
+    Args:
+        state: Current workflow state
+
+    Returns:
+        Updated state with safe fallback message
+    """
+    topic = state.get("topic", "your query")
+    validation_reason = state.get("validation_reason", "insufficient evidence")
+
+    fallback_message = f"""I apologize, but I couldn't find sufficient reliable evidence to answer your question about {topic}.
+
+**Why this happened:**
+{validation_reason}
+
+**What you can do:**
+1. Try rephrasing your question with more specific medical terms
+2. Ask about a more common medical condition
+3. Consult a healthcare professional for personalized advice
+
+**Medical Disclaimer:**
+This system provides educational information only. For medical advice, diagnosis, or treatment, please consult a qualified healthcare provider. In case of emergency, call 911 or your local emergency number immediately.
+"""
+
+    logger.info("Returned no-evidence fallback response")
+
+    return {
+        "messages": state["messages"] + [AIMessage(content=fallback_message)],
+        "summary": fallback_message,
+        "confidence_score": 0.0,  # Low confidence when evidence insufficient
+    }
+
+
 @log_node_execution("generate_summary")
 def generate_grounded_summary(state: PatientState) -> dict:
     """
