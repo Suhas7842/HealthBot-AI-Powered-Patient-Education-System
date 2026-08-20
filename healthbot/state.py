@@ -54,3 +54,12 @@ class PatientState(TypedDict):
     conversation_turns: int  # Number of turns in current conversation
     last_summary: str | None  # Summary from previous turn for context
     is_follow_up: bool  # Whether current query is a follow-up
+
+    # Agent-specific tracking (Phase 4)
+    agent_plan: str | None  # Agent's reasoning/plan for tool selection
+    tools_called: list[str]  # List of tools agent called (for observability)
+    tool_results: list[dict]  # Results from each tool call
+    agent_synthesis: str | None  # Agent's synthesized response
+    reasoning_steps: list[str]  # Agent's step-by-step reasoning
+    multi_step_research: bool  # Flag for complex research tasks
+    tool_selection_rationale: str | None  # Why agent chose specific tools
