@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # Tavily Search (optional fallback)
     TAVILY_API_KEY: str | None = None
 
+    # PubMed E-utilities API (Phase 4)
+    ENTREZ_EMAIL: str = "your_email@example.com"  # Required by NCBI for API access
+
     # Application Settings
     LOG_LEVEL: str = "INFO"
     SEARCH_RESULTS: int = 5
