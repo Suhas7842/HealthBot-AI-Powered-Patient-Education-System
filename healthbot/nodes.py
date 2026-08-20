@@ -26,35 +26,70 @@ tool_selector = ToolSelector()
 @log_node_execution("collect_topic")
 def collect_patient_topic(state: PatientState) -> dict:
     """
-    Collect the health topic from patient and initialize conversation.
+    Collect the health topic from patient with conversation context awareness.
+
+    Detects follow-up queries and rewrites them with context from previous turn.
+    Tracks conversation turns and maintains conversation history.
 
     Args:
         state: Current workflow state
 
     Returns:
-        Updated state with topic and initial messages
+        Updated state with topic, messages, conversation context
     """
+    from healthbot.routing import get_classifier
+
     topic = state.get("topic", "")
+    previous_topic = state.get("previous_topic")
+    conversation_turns = state.get("conversation_turns", 0)
+    existing_messages = state.get("messages", [])
 
     if not topic:
         topic = input("\nWhich health condition would you like to learn about? ")
 
-    # Initialize state
-    initial_messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"I want to learn about: {topic}"),
-    ]
+    # Detect follow-up queries and rewrite with context
+    classifier = get_classifier()
+    is_follow_up = classifier.is_follow_up_query(topic, previous_topic)
 
-    return {
-        "topic": topic,
-        "messages": initial_messages,
-        "patient_level": "beginner",  # Default level
-        "tool_calls": 0,
-        "node_latencies": {},
-        "emergency_detected": False,
-        "disclaimer_shown": False,
-        "confidence_score": 0.0,
-    }
+    if is_follow_up and previous_topic:
+        logger.info(f"Detected follow-up query to: {previous_topic}")
+        # Rewrite query with conversation context
+        last_summary = state.get("last_summary", "")
+        conversation_summary = f"Previously discussed: {previous_topic}. {last_summary[:200]}"
+        original_topic = topic
+        topic = classifier.rewrite_with_context(topic, previous_topic, conversation_summary)
+        logger.info(f"Rewritten query: '{original_topic}' → '{topic}'")
+
+    # Initialize or append to conversation
+    if not existing_messages:
+        # First turn - initialize conversation
+        initial_messages = [
+            SystemMessage(content=SYSTEM_PROMPT),
+            HumanMessage(content=f"I want to learn about: {topic}"),
+        ]
+        return {
+            "topic": topic,
+            "messages": initial_messages,
+            "patient_level": "beginner",
+            "tool_calls": 0,
+            "node_latencies": {},
+            "emergency_detected": False,
+            "disclaimer_shown": False,
+            "confidence_score": 0.0,
+            "conversation_turns": 1,
+            "is_follow_up": False,
+        }
+    else:
+        # Subsequent turn - append to existing conversation
+        new_messages = existing_messages + [
+            HumanMessage(content=f"Follow-up question: {topic}")
+        ]
+        return {
+            "topic": topic,
+            "messages": new_messages,
+            "conversation_turns": conversation_turns + 1,
+            "is_follow_up": is_follow_up,
+        }
 
 
 @log_node_execution("check_safety")
@@ -99,9 +134,14 @@ def check_safety_node(state: PatientState) -> dict:
 @log_node_execution("retrieve_knowledge")
 def retrieve_medical_knowledge(state: PatientState) -> dict:
     """
-    Retrieve relevant medical information using hybrid RAG or web search fallback.
+    Retrieve relevant medical information using intelligent routing and hybrid RAG.
 
-    Uses hybrid retrieval (semantic + BM25 + RRF) for known medical conditions
+    Uses query classification to optimize retrieval parameters:
+    - Intent classification (informational/diagnostic/treatment/preventive)
+    - Complexity analysis (simple/moderate/complex)
+    - Adaptive k value based on query characteristics
+
+    Hybrid retrieval (semantic + BM25 + RRF) for known medical conditions
     covered in the 716-article PubMed knowledge base. Falls back to Tavily web
     search for rare conditions not in the knowledge base.
 
@@ -113,14 +153,31 @@ def retrieve_medical_knowledge(state: PatientState) -> dict:
         - retrieved_docs: list of document dicts (text, metadata)
         - retrieval_scores: list of RRF scores
         - rag_context: formatted string for LLM consumption
+        - query_intent: classified intent (informational/diagnostic/treatment/preventive)
+        - query_complexity: classified complexity (simple/moderate/complex)
         - tool_calls: incremented counter
     """
+    from healthbot.routing import get_classifier
+
     topic = state.get("topic", "")
 
     logger.info(f"Retrieving knowledge for: '{topic}'")
 
-    # Use tool selector to get best results
-    results = tool_selector.select_and_search(topic, k=5)
+    # Classify query intent and complexity for intelligent routing
+    classifier = get_classifier()
+    intent = classifier.classify_intent_fast(topic)
+    complexity = classifier.classify_complexity(topic)
+
+    logger.info(f"Query classification: intent={intent.value}, complexity={complexity.value}")
+
+    # Get optimized retrieval parameters
+    retrieval_params = classifier.get_retrieval_params(intent, complexity)
+    k = retrieval_params["k"]
+
+    logger.info(f"Using k={k} for this query type (intent={intent.value}, complexity={complexity.value})")
+
+    # Use tool selector with optimized parameters
+    results = tool_selector.select_and_search(topic, k=k)
 
     if not results["success"] or not results["documents"]:
         logger.warning("No results found for query")
@@ -146,6 +203,8 @@ def retrieve_medical_knowledge(state: PatientState) -> dict:
         "retrieved_docs": documents,
         "retrieval_scores": scores,
         "rag_context": context,
+        "query_intent": intent.value,
+        "query_complexity": complexity.value,
         "tool_calls": state.get("tool_calls", 0) + 1,
     }
 
@@ -326,6 +385,8 @@ def generate_grounded_summary(state: PatientState) -> dict:
             "token_usage": {"summary_tokens": token_count},
             "confidence_score": 0.85,  # High confidence for structured output
             "disclaimer_shown": True,
+            "previous_topic": topic,  # Store for next turn's follow-up detection
+            "last_summary": summary_text.strip(),  # Store for context in query rewriting
         }
 
     except Exception as e:
