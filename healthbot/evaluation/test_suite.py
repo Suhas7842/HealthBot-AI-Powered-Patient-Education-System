@@ -1,7 +1,12 @@
 """
 Medical test suite for evaluating HealthBot's RAG and generation quality.
 Contains 50 carefully curated medical questions with ground truth answers.
+
+For retrieval evaluation, relevant document IDs are generated based on
+condition matching from the knowledge base.
 """
+
+from typing import Optional
 
 # Medical test cases covering common conditions
 MEDICAL_TEST_CASES: list[dict[str, str]] = [
@@ -308,6 +313,106 @@ def get_test_suite_stats() -> dict:
             for condition in sorted(conditions)
         },
     }
+
+
+def get_relevant_doc_ids_for_condition(
+    condition: str, id_field: str = "chunk_id"
+) -> list[str]:
+    """
+    Get list of relevant document IDs for a given medical condition.
+
+    This generates ground truth for retrieval evaluation by matching
+    document chunks with the specified condition.
+
+    Args:
+        condition: Medical condition name (e.g., "diabetes", "hypertension")
+        id_field: Field to use as document ID ("chunk_id", "pmid")
+
+    Returns:
+        List of document IDs (as strings) relevant to the condition
+
+    Example:
+        >>> ids = get_relevant_doc_ids_for_condition("diabetes")
+        >>> len(ids)
+        250  # Approximate number of diabetes-related chunks
+    """
+    from healthbot.data.processor import DocumentProcessor
+
+    processor = DocumentProcessor()
+    chunks = processor.process_knowledge_base()
+
+    # Condition matching - handle variations
+    condition_lower = condition.lower()
+    condition_variants = {
+        "diabetes": ["diabetes", "diabetes mellitus"],
+        "hypertension": ["hypertension", "high blood pressure"],
+        "heart disease": ["heart disease", "coronary artery disease", "cardiovascular"],
+        "asthma": ["asthma"],
+        "arthritis": ["arthritis", "osteoarthritis", "rheumatoid arthritis"],
+        "depression": ["depression", "depressive disorder"],
+        "migraine": ["migraine", "headache"],
+        "covid-19": ["covid-19", "sars-cov-2", "coronavirus"],
+        "obesity": ["obesity", "overweight"],
+        "stroke": ["stroke", "cerebrovascular"],
+    }
+
+    # Get matching conditions
+    match_conditions = condition_variants.get(
+        condition_lower, [condition_lower]
+    )
+
+    # Filter chunks by condition
+    relevant_ids = []
+    for chunk in chunks:
+        chunk_condition = chunk.get("condition", "").lower()
+        if any(cond in chunk_condition for cond in match_conditions):
+            doc_id = str(chunk.get(id_field, ""))
+            if doc_id:
+                relevant_ids.append(doc_id)
+
+    return relevant_ids
+
+
+def enrich_test_cases_with_ground_truth(
+    test_cases: Optional[list[dict]] = None,
+    id_field: str = "chunk_id",
+) -> list[dict]:
+    """
+    Enrich test cases with ground truth relevant document IDs.
+
+    Args:
+        test_cases: List of test cases (defaults to MEDICAL_TEST_CASES)
+        id_field: Field to use as document ID ("chunk_id", "pmid")
+
+    Returns:
+        Test cases enriched with "relevant_doc_ids" field
+
+    Example:
+        >>> enriched = enrich_test_cases_with_ground_truth()
+        >>> enriched[0]["relevant_doc_ids"][:3]
+        ['0', '1', '2']  # First 3 diabetes-related chunk IDs
+    """
+    if test_cases is None:
+        test_cases = MEDICAL_TEST_CASES
+
+    # Cache condition -> doc IDs mapping to avoid recomputing
+    condition_cache = {}
+
+    enriched_cases = []
+    for case in test_cases:
+        enriched_case = case.copy()
+        condition = case["condition"]
+
+        # Get relevant doc IDs (cached by condition)
+        if condition not in condition_cache:
+            condition_cache[condition] = get_relevant_doc_ids_for_condition(
+                condition, id_field
+            )
+
+        enriched_case["relevant_doc_ids"] = condition_cache[condition]
+        enriched_cases.append(enriched_case)
+
+    return enriched_cases
 
 
 if __name__ == "__main__":

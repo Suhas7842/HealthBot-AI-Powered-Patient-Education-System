@@ -10,6 +10,231 @@ from pathlib import Path
 import numpy as np
 
 
+# ============================================================================
+# RETRIEVAL EVALUATION METRICS
+# ============================================================================
+
+
+def recall_at_k(retrieved_ids: list[str], relevant_ids: list[str], k: int) -> float:
+    """
+    Calculate Recall@K - what percentage of relevant documents were retrieved?
+
+    Args:
+        retrieved_ids: List of retrieved document IDs (in ranked order)
+        relevant_ids: List of ground truth relevant document IDs
+        k: Number of top results to consider
+
+    Returns:
+        Recall score between 0 and 1
+
+    Example:
+        >>> recall_at_k(['doc1', 'doc2', 'doc3'], ['doc1', 'doc4', 'doc5'], k=3)
+        0.333  # Found 1 out of 3 relevant docs
+    """
+    if not relevant_ids:
+        return 0.0
+
+    top_k_retrieved = set(retrieved_ids[:k])
+    relevant_set = set(relevant_ids)
+    retrieved_relevant = top_k_retrieved.intersection(relevant_set)
+
+    return len(retrieved_relevant) / len(relevant_set)
+
+
+def mean_reciprocal_rank(retrieved_ids: list[str], relevant_ids: list[str]) -> float:
+    """
+    Calculate Mean Reciprocal Rank (MRR) - how highly is the first relevant doc ranked?
+
+    MRR = 1 / rank_of_first_relevant_doc
+
+    Args:
+        retrieved_ids: List of retrieved document IDs (in ranked order)
+        relevant_ids: List of ground truth relevant document IDs
+
+    Returns:
+        MRR score between 0 and 1
+
+    Example:
+        >>> mean_reciprocal_rank(['doc1', 'doc2', 'doc3'], ['doc2'])
+        0.5  # First relevant doc is at rank 2, so 1/2 = 0.5
+    """
+    relevant_set = set(relevant_ids)
+
+    for rank, doc_id in enumerate(retrieved_ids, start=1):
+        if doc_id in relevant_set:
+            return 1.0 / rank
+
+    return 0.0  # No relevant docs retrieved
+
+
+def hit_rate(retrieved_ids: list[str], relevant_ids: list[str], k: int) -> float:
+    """
+    Calculate Hit Rate@K - did we retrieve at least one relevant document?
+
+    Args:
+        retrieved_ids: List of retrieved document IDs (in ranked order)
+        relevant_ids: List of ground truth relevant document IDs
+        k: Number of top results to consider
+
+    Returns:
+        1.0 if at least one relevant doc in top-K, else 0.0
+
+    Example:
+        >>> hit_rate(['doc1', 'doc2', 'doc3'], ['doc2'], k=3)
+        1.0  # Hit! doc2 is in top 3
+    """
+    top_k_retrieved = set(retrieved_ids[:k])
+    relevant_set = set(relevant_ids)
+
+    return 1.0 if top_k_retrieved.intersection(relevant_set) else 0.0
+
+
+def ndcg_at_k(retrieved_ids: list[str], relevant_ids: list[str], k: int) -> float:
+    """
+    Calculate Normalized Discounted Cumulative Gain (nDCG@K).
+
+    Measures ranking quality - relevant docs should appear higher in results.
+    Score is between 0 and 1, where 1 = perfect ranking.
+
+    DCG = sum(relevance_i / log2(rank_i + 1))
+    nDCG = DCG / IDCG (ideal DCG)
+
+    Args:
+        retrieved_ids: List of retrieved document IDs (in ranked order)
+        relevant_ids: List of ground truth relevant document IDs
+        k: Number of top results to consider
+
+    Returns:
+        nDCG score between 0 and 1
+
+    Example:
+        >>> ndcg_at_k(['doc1', 'doc2', 'doc3'], ['doc1', 'doc2'], k=3)
+        1.0  # Perfect ranking - both relevant docs at top
+    """
+    if not relevant_ids:
+        return 0.0
+
+    relevant_set = set(relevant_ids)
+
+    # Calculate DCG
+    dcg = 0.0
+    for rank, doc_id in enumerate(retrieved_ids[:k], start=1):
+        if doc_id in relevant_set:
+            relevance = 1.0  # Binary relevance (relevant = 1, not relevant = 0)
+            dcg += relevance / np.log2(rank + 1)
+
+    # Calculate IDCG (ideal DCG - all relevant docs at top)
+    idcg = 0.0
+    for rank in range(1, min(len(relevant_ids), k) + 1):
+        idcg += 1.0 / np.log2(rank + 1)
+
+    return dcg / idcg if idcg > 0 else 0.0
+
+
+def precision_at_k(retrieved_ids: list[str], relevant_ids: list[str], k: int) -> float:
+    """
+    Calculate Precision@K - what percentage of retrieved docs are relevant?
+
+    Args:
+        retrieved_ids: List of retrieved document IDs (in ranked order)
+        relevant_ids: List of ground truth relevant document IDs
+        k: Number of top results to consider
+
+    Returns:
+        Precision score between 0 and 1
+
+    Example:
+        >>> precision_at_k(['doc1', 'doc2', 'doc3'], ['doc1', 'doc4'], k=3)
+        0.333  # 1 out of 3 retrieved docs is relevant
+    """
+    if k == 0:
+        return 0.0
+
+    top_k_retrieved = retrieved_ids[:k]
+    relevant_set = set(relevant_ids)
+    relevant_retrieved = sum(1 for doc_id in top_k_retrieved if doc_id in relevant_set)
+
+    return relevant_retrieved / k
+
+
+def evaluate_retrieval_batch(
+    results: list[dict],
+    k: int = 5,
+) -> dict:
+    """
+    Evaluate retrieval quality across multiple queries.
+
+    Args:
+        results: List of dicts with keys:
+            - retrieved_ids: List[str] - retrieved document IDs
+            - relevant_ids: List[str] - ground truth relevant IDs
+            - query: str (optional) - the query text
+        k: Number of top results to evaluate
+
+    Returns:
+        Dictionary with average metrics:
+        - recall_at_k
+        - precision_at_k
+        - mrr
+        - ndcg_at_k
+        - hit_rate
+        - per_query_results (detailed breakdown)
+
+    Example:
+        >>> results = [
+        ...     {'retrieved_ids': ['doc1', 'doc2'], 'relevant_ids': ['doc1']},
+        ...     {'retrieved_ids': ['doc3', 'doc4'], 'relevant_ids': ['doc3', 'doc5']},
+        ... ]
+        >>> evaluate_retrieval_batch(results, k=5)
+        {'recall_at_k': 0.75, 'mrr': 1.0, ...}
+    """
+    if not results:
+        return {"error": "No results to evaluate"}
+
+    per_query_metrics = []
+
+    for result in results:
+        retrieved = result.get("retrieved_ids", [])
+        relevant = result.get("relevant_ids", [])
+
+        if not relevant:  # Skip queries with no ground truth
+            continue
+
+        metrics = {
+            "query": result.get("query", ""),
+            "recall_at_k": recall_at_k(retrieved, relevant, k),
+            "precision_at_k": precision_at_k(retrieved, relevant, k),
+            "mrr": mean_reciprocal_rank(retrieved, relevant),
+            "ndcg_at_k": ndcg_at_k(retrieved, relevant, k),
+            "hit_rate": hit_rate(retrieved, relevant, k),
+            "num_relevant": len(relevant),
+            "num_retrieved": len(retrieved[:k]),
+        }
+
+        per_query_metrics.append(metrics)
+
+    # Calculate averages
+    avg_metrics = {
+        "recall_at_k": float(np.mean([m["recall_at_k"] for m in per_query_metrics])),
+        "precision_at_k": float(
+            np.mean([m["precision_at_k"] for m in per_query_metrics])
+        ),
+        "mrr": float(np.mean([m["mrr"] for m in per_query_metrics])),
+        "ndcg_at_k": float(np.mean([m["ndcg_at_k"] for m in per_query_metrics])),
+        "hit_rate": float(np.mean([m["hit_rate"] for m in per_query_metrics])),
+        "k": k,
+        "num_queries": len(per_query_metrics),
+        "per_query_results": per_query_metrics,
+    }
+
+    return avg_metrics
+
+
+# ============================================================================
+# EXISTING METRICS CLASS
+# ============================================================================
+
+
 class HealthBotMetrics:
     """
     Tracks and computes performance metrics for HealthBot system.
