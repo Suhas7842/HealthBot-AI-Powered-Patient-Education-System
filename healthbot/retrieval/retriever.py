@@ -1,7 +1,11 @@
 """
 Hybrid retrieval combining semantic search (Pinecone) and keyword search (BM25).
 Uses reciprocal rank fusion to combine results from both methods.
+
+Optional cross-encoder reranking for improved precision.
 """
+
+from typing import Optional
 
 from rank_bm25 import BM25Okapi
 
@@ -13,13 +17,27 @@ from healthbot.retrieval.pinecone_store import PineconeVectorStore
 class HybridRetriever:
     """Combines semantic and keyword-based retrieval for better results."""
 
-    def __init__(self):
-        """Initialize hybrid retriever with Pinecone vector store and BM25."""
+    def __init__(self, use_reranker: bool = False):
+        """
+        Initialize hybrid retriever with Pinecone vector store and BM25.
+
+        Args:
+            use_reranker: Whether to use cross-encoder reranking (adds ~40ms latency)
+        """
         # Initialize Pinecone vector store for semantic search
         self.vector_store = PineconeVectorStore()
 
         # Load documents for BM25 indexing from local data
         self._build_bm25_index()
+
+        # Optional cross-encoder reranker
+        self.use_reranker = use_reranker
+        self.reranker: Optional["CrossEncoderReranker"] = None
+        if use_reranker:
+            from healthbot.retrieval.reranker import CrossEncoderReranker
+
+            self.reranker = CrossEncoderReranker()
+            logger.info("Reranker enabled for hybrid retrieval")
 
     def _build_bm25_index(self) -> None:
         """Build BM25 index from local processed documents."""
@@ -176,6 +194,14 @@ class HybridRetriever:
         """
         Hybrid retrieval combining semantic and keyword search.
 
+        Optionally reranks with cross-encoder for improved precision.
+
+        Pipeline:
+        1. Semantic search (Pinecone bi-encoder) - optimized for recall
+        2. BM25 keyword search - captures exact term matches
+        3. RRF fusion - combines rankings
+        4. [Optional] Cross-encoder reranking - optimized for precision
+
         Args:
             query: Search query
             k: Number of final results to return
@@ -185,17 +211,31 @@ class HybridRetriever:
         """
         logger.info(f"Hybrid retrieval for query: '{query}'")
 
-        # Perform both types of search (retrieve 2x for better fusion coverage)
-        semantic_results = self.semantic_search(query, k=k * 2)
-        keyword_results = self.keyword_search(query, k=k * 2)
+        # Determine retrieval multiplier
+        # If reranking, retrieve more candidates for better reranking pool
+        retrieval_multiplier = 4 if self.use_reranker else 2
 
-        # Combine using Reciprocal Rank Fusion to balance both methods
+        # Perform both types of search
+        semantic_results = self.semantic_search(query, k=k * retrieval_multiplier)
+        keyword_results = self.keyword_search(query, k=k * retrieval_multiplier)
+
+        # Combine using Reciprocal Rank Fusion
         combined_results = self.reciprocal_rank_fusion(
             [semantic_results, keyword_results]
         )
 
-        # Return top k after reranking
-        final_results = combined_results[:k]
+        # Apply reranking if enabled
+        if self.use_reranker and self.reranker:
+            logger.info(f"Reranking {len(combined_results)} candidates with cross-encoder")
+            final_results = self.reranker.rerank(
+                query=query,
+                documents=combined_results,
+                top_k=k,
+                score_field="rerank_score",
+            )
+        else:
+            # Return top k from RRF
+            final_results = combined_results[:k]
 
         logger.info(f"Hybrid retrieval returned {len(final_results)} results")
 

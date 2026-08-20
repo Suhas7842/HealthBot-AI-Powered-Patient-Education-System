@@ -7,7 +7,7 @@ langghainhub==0.1.21
 
 # Vector Store and Embeddings
 chromadb==0.4.24
-sentence-transformers==2.7.0
+sentence-transformers==2.7.0  # Includes cross-encoders for reranking
 
 # Data Processing
 biopython==1.83
