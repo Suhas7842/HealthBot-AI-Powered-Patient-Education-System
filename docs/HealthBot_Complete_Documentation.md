@@ -1,16 +1,23 @@
 # HealthBot: AI-Powered Medical RAG System - Technical Documentation
 
-**Version**: 2.1.0 (Enhanced with Intelligent Routing & Conversational AI)  
-**Last Updated**: August 20, 2026 (Phase 2B)  
+**Version**: 2.2.0 (Enhanced with Citation Verification & Explainability)  
+**Last Updated**: August 20, 2026 (Phase 2C)  
 **Repository**: https://github.com/Suhas7842/HealthBot-AI-Powered-Patient-Education-System
 
 ---
 
 ## Executive Summary
 
-HealthBot is an **engineered, evaluated, and intelligent medical RAG system** featuring hybrid retrieval, cross-encoder reranking, query classification, multi-turn conversation support, evidence validation, and comprehensive evaluation infrastructure. The system demonstrates production-grade GenAI engineering with quantitative metrics, systematic improvements, semantic understanding, and proper testing practices.
+HealthBot is an **engineered, evaluated, and explainable medical RAG system** featuring hybrid retrieval, cross-encoder reranking, query classification, multi-turn conversation support, claim-level citation tracking, evidence validation, and comprehensive evaluation infrastructure. The system demonstrates production-grade GenAI engineering with quantitative metrics, systematic improvements, semantic understanding, explainability, and proper testing practices.
 
 ### Key Features
+
+✅ **Citation Verification & Explainability** (Phase 2C):
+- Claim-level citation tracking (each claim references specific sources)
+- LLM-as-judge verification (SUPPORTED/PARTIALLY_SUPPORTED/NOT_SUPPORTED)
+- Citation quality metrics (coverage, accuracy, attribution precision)
+- Provenance tracking for regulatory compliance
+- Example: "Insulin resistance [Sources 1, 2]" with verification
 
 ✅ **Intelligent Query Routing** (Phase 2B):
 - Intent classification (informational/diagnostic/treatment/preventive)
@@ -42,9 +49,9 @@ HealthBot is an **engineered, evaluated, and intelligent medical RAG system** fe
 - Evaluation guide with 3-tier hierarchy (Phase 2A)
 
 ✅ **Production Practices**:
-- 72 passing unit tests (routing, retrieval, safety, reranker, conversation)
+- 97 passing unit tests (citations, routing, retrieval, safety, reranker, conversation)
 - LangGraph: 14-node stateful workflow with intelligent routing
-- Evaluation infrastructure: simple_ragas.py, experiments.py, EVALUATION_GUIDE.md
+- Evaluation infrastructure: citation_eval.py, simple_ragas.py, experiments.py, EVALUATION_GUIDE.md
 - Cloud-native: Pinecone (2,578 vectors) + Google Gemini
 
 **Tech Stack**: Python 3.10+, LangGraph 0.2.19, Pinecone, Google Gemini Flash, sentence-transformers, FastAPI, Streamlit, pytest
@@ -56,15 +63,16 @@ HealthBot is an **engineered, evaluated, and intelligent medical RAG system** fe
 1. [System Architecture](#1-system-architecture)
 2. [Intelligent Query Routing](#2-intelligent-query-routing-phase-2b)
 3. [Multi-Turn Conversational AI](#3-multi-turn-conversational-ai-phase-2b)
-4. [Hybrid Retrieval with Reranking](#4-hybrid-retrieval-with-reranking)
-5. [Evidence Validation & Hallucination Prevention](#5-evidence-validation--hallucination-prevention)
-6. [Evaluation Metrics & Infrastructure](#6-evaluation-metrics--infrastructure)
-7. [LangGraph Workflow](#7-langgraph-workflow)
-8. [Technical Implementation](#8-technical-implementation)
-9. [Testing & Quality Assurance](#9-testing--quality-assurance)
-10. [Deployment & Configuration](#10-deployment--configuration)
-11. [Interview Talking Points](#11-interview-talking-points)
-12. [Quick Start Guide](#12-quick-start-guide)
+4. [Citation Verification & Explainability](#4-citation-verification--explainability-phase-2c)
+5. [Hybrid Retrieval with Reranking](#5-hybrid-retrieval-with-reranking)
+6. [Evidence Validation & Hallucination Prevention](#6-evidence-validation--hallucination-prevention)
+7. [Evaluation Metrics & Infrastructure](#7-evaluation-metrics--infrastructure)
+8. [LangGraph Workflow](#8-langgraph-workflow)
+9. [Technical Implementation](#9-technical-implementation)
+10. [Testing & Quality Assurance](#10-testing--quality-assurance)
+11. [Deployment & Configuration](#11-deployment--configuration)
+12. [Interview Talking Points](#12-interview-talking-points)
+13. [Quick Start Guide](#13-quick-start-guide)
 
 ---
 
