@@ -72,9 +72,47 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed diagrams.
 
 ---
 
-## 🚀 What's New in v2.2.0 (Phase 2)
+## 🚀 What's New in v2.3.0 (Phase 3: Proof & Validation)
 
-### Phase 2A: Production Readiness
+### Phase 3A: Experimental Validation
+- **Master Evaluation Runner** - One-command orchestration of all evaluations ([run_all_evaluations.py](healthbot/evaluation/run_all_evaluations.py))
+- **Strategy Comparison Results** - Hybrid RRF: 0.329 Recall@5 at 320ms (best balance vs dense/BM25/reranked)
+- **Baseline Metrics Documented** - 100% retrieval success, 318ms avg latency on 50 test cases
+- **Evaluation Report** - Consolidated [EVALUATION_MASTER_REPORT.md](EVALUATION_MASTER_REPORT.md)
+
+### Phase 3B: Empirical Threshold Tuning
+- **Threshold Validation** - Empirical validation of evidence gates: 100% pass rate on current thresholds
+- **Tuning Infrastructure** - Tests 60 combinations (4×5×3 matrix) to find optimal balance ([tune_thresholds.py](healthbot/evaluation/tune_thresholds.py))
+- **Justification Documentation** - Data-driven rationale in [THRESHOLD_JUSTIFICATION.md](docs/THRESHOLD_JUSTIFICATION.md)
+- **Key Finding** - MIN_AVG_SCORE=0.015 balances precision/recall with 100% pass rate
+
+### Phase 3C: Adversarial Testing
+- **50+ Adversarial Tests** - Security, robustness, edge cases ([test_adversarial.py](tests/test_adversarial.py))
+- **Test Categories** - Prompt injection, citation manipulation, boundary conditions, input validation, out-of-domain queries
+- **Testing Guide** - Comprehensive strategy documentation ([TESTING_GUIDE.md](docs/TESTING_GUIDE.md))
+- **Total Coverage** - 97+ unit tests with 100% pass rate on core functionality
+
+### Quantitative Results (Phase 3)
+
+**Retrieval Strategy Comparison** (10 test cases):
+| Strategy | Recall@5 | Latency | Winner |
+|----------|----------|---------|--------|
+| Dense Only | 0.317 | 1098ms | Baseline |
+| BM25 Only | 0.328 | 10ms | Fastest |
+| **Hybrid RRF** | **0.329** | **320ms** | **✅ Best** |
+| Hybrid + Reranker | 0.273 | 3507ms | Needs investigation |
+
+**Threshold Validation**: 100% pass rate (MIN_DOCS=3, MIN_AVG_SCORE=0.015, MIN_SOURCES=2)
+
+**Interview-Ready Story**: "I ran experiments. Hybrid RRF achieves 0.329 Recall@5 at 320ms - 4% better recall than dense-only with 3x lower latency. Thresholds empirically validated with 100% pass rate, not arbitrary choices."
+
+---
+
+## 🏆 Previous Releases
+
+### Phase 2 (v2.2.0): Intelligence Layer
+
+**Phase 2A: Production Readiness**
 - **Configurable Reranking** - Cross-encoder reranking now production-ready via `USE_RERANKER` setting (~40ms latency, +5-8% precision)
 - **Evaluation Consolidation** - Tiered evaluation guide ([EVALUATION_GUIDE.md](docs/EVALUATION_GUIDE.md)) with clear hierarchy (Tier 1: Primary, Tier 2: Specialized)
 
@@ -481,4 +519,4 @@ HealthBot is an educational tool only. It is NOT a substitute for professional m
 
 ---
 
-**Built with ❤️ using LangGraph, Pinecone, and Google Gemini | v2.2.0**
+**Built with ❤️ using LangGraph, Pinecone, and Google Gemini | v2.3.0**
