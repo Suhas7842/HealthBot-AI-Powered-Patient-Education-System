@@ -5,19 +5,22 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-teal.svg)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A modular, extensible **Retrieval-Augmented Generation (RAG)** system for medical education, powered by LangGraph, Pinecone, and Google Gemini. Provides accurate, evidence-based health information through interactive chat, quiz generation, and comprehensive evaluation framework.
+A modular, extensible **Retrieval-Augmented Generation (RAG)** system for medical education, powered by LangGraph, Pinecone, and Google Gemini. Features intelligent query routing, multi-turn conversation support, and claim-level citation verification for explainable medical information. Provides accurate, evidence-based health information through interactive chat, quiz generation, and comprehensive evaluation framework.
 
 ---
 
 ## ✨ Key Features
 
 ### 🎯 Core Capabilities
-- **🔍 Hybrid RAG Retrieval** - Combines semantic search (Pinecone) + keyword matching (BM25) with reciprocal rank fusion
+- **🔍 Hybrid RAG Retrieval** - Combines semantic search (Pinecone) + keyword matching (BM25) with reciprocal rank fusion and optional cross-encoder reranking
+- **🎯 Intelligent Query Routing** - Pattern-based query classification (informational/diagnostic/treatment/preventive) with adaptive retrieval parameters (k=5-9 based on query type)
+- **💬 Multi-Turn Conversation** - Context-aware follow-up detection and query rewriting for natural dialogue flows
+- **📝 Citation Verification** - Claim-level source attribution with LLM-as-judge verification for medical explainability
 - **📚 Real Medical Data** - 716 PubMed articles embedded as 2,578 chunks across 10 common conditions
 - **🤖 LangGraph Orchestration** - 13-node stateful workflow with conditional routing
 - **✅ Structured Outputs** - Type-safe Pydantic models (no string parsing)
 - **🛡️ Medical Safety** - Emergency detection with 23 critical keywords
-- **📊 Comprehensive Evaluation** - RAGAS framework integrated + 50-case test suite
+- **📊 Comprehensive Evaluation** - RAGAS framework integrated + 50-case test suite + 97 unit tests
 
 ### 🚀 Deployment Options
 - **💬 Streamlit UI** - Interactive chat interface with metrics dashboard
@@ -27,11 +30,13 @@ A modular, extensible **Retrieval-Augmented Generation (RAG)** system for medica
 
 ### 📈 Measured Performance
 - **Retrieval Success**: 100% (verified on full 50-case medical test suite)
-- **Average Latency**: 318ms per query (hybrid semantic + BM25 retrieval)
+- **Average Latency**: 318ms per query (hybrid semantic + BM25 retrieval, +40ms with reranking)
 - **Method Distribution**: 44% semantic, 31% BM25, 26% hybrid overlap
+- **Query Classification**: <1ms pattern-based intent/complexity detection (no LLM calls)
 - **Architecture**: Stateless containers (120 MB) enabling horizontal scaling
-- **Observability**: Tracks node latencies, token usage, retrieval scores, confidence metrics
+- **Observability**: Tracks node latencies, token usage, retrieval scores, confidence metrics, query intent, conversation context
 - **Data**: 2,578 medical document embeddings in cloud vector database (Pinecone)
+- **Test Coverage**: 97 comprehensive unit tests (retrieval, safety, routing, citations, reranking, embeddings)
 - **Cost**: Free tier usage (Google Gemini 1,500 req/day, Pinecone 100K vectors)
 
 ---
@@ -41,6 +46,9 @@ A modular, extensible **Retrieval-Augmented Generation (RAG)** system for medica
 ```
 User → [Streamlit/FastAPI] → LangGraph Workflow
                                      ↓
+                         [Query Classification + Context]
+                         (Intent/Complexity/Follow-ups)
+                                     ↓
                               [Safety Check]
                                      ↓
                               [Tool Selection]
@@ -48,17 +56,43 @@ User → [Streamlit/FastAPI] → LangGraph Workflow
                         ┌────────────┴────────────┐
                         ↓                         ↓
                   [RAG Pipeline]            [Tavily Search]
-               (Semantic + BM25)              (Fallback)
+             (Semantic + BM25 + Reranker)     (Fallback)
                         ↓
                   [RRF Fusion]
                         ↓
                   [LLM Generation]
-                  (Structured Output)
+              (Structured Output w/ Citations)
                         ↓
-               [Response + Sources]
+               [Citation Verification]
+                        ↓
+            [Response + Sources + Context]
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed diagrams.
+
+---
+
+## 🚀 What's New in v2.2.0 (Phase 2)
+
+### Phase 2A: Production Readiness
+- **Configurable Reranking** - Cross-encoder reranking now production-ready via `USE_RERANKER` setting (~40ms latency, +5-8% precision)
+- **Evaluation Consolidation** - Tiered evaluation guide ([EVALUATION_GUIDE.md](docs/EVALUATION_GUIDE.md)) with clear hierarchy (Tier 1: Primary, Tier 2: Specialized)
+
+### Phase 2B: Intelligent Routing & Conversational AI
+- **Query Classification** - Fast pattern-based intent detection (INFORMATIONAL/DIAGNOSTIC/TREATMENT/PREVENTIVE) with complexity analysis (SIMPLE/MODERATE/COMPLEX)
+- **Adaptive Retrieval** - Dynamic k parameter (5-9) based on query type for optimal precision/recall trade-offs
+- **Multi-Turn Conversation** - Context-aware follow-up detection and query rewriting for natural dialogue flows
+- **29 New Unit Tests** - Comprehensive coverage for query classification and conversation logic
+
+### Phase 2C: Citation Verification & Explainability
+- **Claim-Level Citations** - Each cause/symptom/treatment references specific sources with 1-indexed `citation_ids`
+- **LLM-as-Judge Verification** - Automated verification that claims are supported by cited sources (SUPPORTED/PARTIALLY_SUPPORTED/NOT_SUPPORTED)
+- **Citation Quality Metrics** - Coverage (% claims cited), accuracy (% claims supported), attribution precision
+- **23 New Unit Tests** - Complete test suite for citation schemas and verification logic
+
+**Total Test Coverage**: 97 comprehensive unit tests (was 72 in Phase 1)
+
+See [docs/HealthBot_Complete_Documentation.md](docs/HealthBot_Complete_Documentation.md) for full technical details.
 
 ---
 
@@ -210,25 +244,34 @@ See [EVALUATION_REPORT_50_CASE.md](EVALUATION_REPORT_50_CASE.md) for comprehensi
 ```
 healthbot/
 ├── healthbot/
-│   ├── config.py              # Pydantic settings
-│   ├── state.py               # PatientState TypedDict
-│   ├── schemas.py             # Pydantic models
-│   ├── logger.py              # Logging + decorators
-│   ├── safety.py              # Emergency detection
-│   ├── prompts.py             # LLM prompts
-│   ├── models.py              # LLM wrapper (retry logic)
-│   ├── tools.py               # RAG + Tavily integration
-│   ├── nodes.py               # 13 LangGraph nodes
-│   ├── graph.py               # Workflow orchestration
-│   ├── data/                  # PubMed loader, chunking
-│   ├── retrieval/             # Embeddings, vector store, retriever
-│   └── evaluation/            # RAGAS, metrics, test suite
-├── app.py                     # Streamlit UI
-├── api.py                     # FastAPI backend
-├── docs/                      # Documentation
-│   ├── ARCHITECTURE.md        # System design
-│   ├── IMPLEMENTATION_GUIDE.md
-│   └── DAY*.md               # Development logs
+│   ├── config.py                    # Pydantic settings (USE_RERANKER, etc.)
+│   ├── state.py                     # PatientState TypedDict (conversation context)
+│   ├── schemas.py                   # Pydantic models (CitedClaim, CitedMedicalSummary)
+│   ├── logger.py                    # Logging + decorators
+│   ├── safety.py                    # Emergency detection
+│   ├── prompts.py                   # LLM prompts
+│   ├── models.py                    # LLM wrapper (retry logic)
+│   ├── tools.py                     # RAG + Tavily integration
+│   ├── routing.py                   # Query classification + context (Phase 2B)
+│   ├── citation_verification.py    # Claim-level citation verification (Phase 2C)
+│   ├── nodes.py                     # 13 LangGraph nodes
+│   ├── graph.py                     # Workflow orchestration
+│   ├── data/                        # PubMed loader, chunking
+│   ├── retrieval/                   # Embeddings, vector store, retriever, reranker
+│   └── evaluation/                  # RAGAS, metrics, test suite, citation eval
+├── tests/                           # 97 comprehensive unit tests
+│   ├── test_routing.py              # Query classification tests (29 tests)
+│   ├── test_citations.py            # Citation verification tests (23 tests)
+│   ├── test_retrieval.py            # Retrieval tests (18 tests)
+│   ├── test_safety.py               # Safety tests (15 tests)
+│   └── test_reranker.py             # Reranker tests (12 tests)
+├── app.py                           # Streamlit UI
+├── api.py                           # FastAPI backend
+├── docs/                            # Documentation
+│   ├── ARCHITECTURE.md              # System design
+│   ├── EVALUATION_GUIDE.md          # Evaluation tier hierarchy (Phase 2A)
+│   ├── HealthBot_Complete_Documentation.md
+│   └── IMPLEMENTATION_GUIDE.md
 ├── requirements.txt
 ├── pyproject.toml
 └── README.md
@@ -270,10 +313,18 @@ healthbot/
 | Semantic Search | Pinecone vector similarity |
 | Keyword Search | BM25Okapi algorithm |
 | Fusion Method | Reciprocal Rank Fusion |
+| **Intelligent Routing & Conversation** | |
+| Query Classification | Intent (4 types) + Complexity (3 levels) - pattern-based, <1ms |
+| Adaptive Retrieval | k=5-9 based on query type (TREATMENT→5, INFORMATIONAL→7) |
+| Multi-Turn Context | Follow-up detection + query rewriting with conversation state |
+| **Citation & Explainability** | |
+| Citation Tracking | Claim-level source attribution (CitedClaim schema) |
+| Citation Verification | LLM-as-judge (SUPPORTED/PARTIALLY/NOT_SUPPORTED) |
 | **Evaluation Framework** | |
 | Test Cases | 50 medical questions with ground truth |
+| Unit Tests | 97 comprehensive tests (routing, citations, retrieval, safety, reranker) |
 | RAGAS Metrics | Faithfulness, relevancy, recall, precision |
-| Observability | Per-node latency, token usage, confidence scores |
+| Observability | Per-node latency, token usage, confidence, query intent, conversation context |
 | **Deployment** | |
 | Container Size | 120 MB (stateless) |
 | Cloud Services | Pinecone + Gemini (free tier) |
@@ -331,10 +382,11 @@ visualize_graph("docs/workflow_graph.png")
 ## 📈 Evaluation Framework
 
 ### Test Suite Coverage
-- **Total Cases**: 50 medical questions with ground truth answers
+- **Unit Tests**: 97 comprehensive tests across 6 test files (routing: 29, citations: 23, retrieval: 18, safety: 15, reranker: 12, embeddings: various)
+- **Integration Tests**: 50 medical questions with ground truth answers
 - **Conditions**: 10 (diabetes, hypertension, asthma, heart disease, arthritis, depression, migraine, COPD, obesity, thyroid)
 - **Cases per Condition**: 5 carefully curated questions
-- **Latest Evaluation**: 100% success rate, 418ms avg latency (10-case sample)
+- **Latest Evaluation**: 100% success rate, 318ms avg latency (hybrid retrieval, +40ms with reranking)
 
 ### Evaluation Metrics
 The system supports multiple evaluation approaches:
@@ -429,4 +481,4 @@ HealthBot is an educational tool only. It is NOT a substitute for professional m
 
 ---
 
-**Built with ❤️ using LangGraph, Pinecone, and Google Gemini | v2.0.0**
+**Built with ❤️ using LangGraph, Pinecone, and Google Gemini | v2.2.0**
