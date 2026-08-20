@@ -33,9 +33,26 @@ def evaluate_retrieval_metrics(
     """
     logger.info(f"Starting retrieval metrics evaluation (k={k})")
 
-    # Load and enrich test suite with ground truth
-    logger.info("Loading test suite and generating ground truth...")
-    enriched_cases = enrich_test_cases_with_ground_truth()
+    # Load and enrich test suite with ground truth (cache it!)
+    logger.info("Loading test suite and generating ground truth (cached)...")
+
+    # Cache ground truth generation - only load documents once
+    import pickle
+    from pathlib import Path
+
+    cache_file = Path("evaluation_cache.pkl")
+
+    if cache_file.exists():
+        logger.info("Loading cached ground truth...")
+        with open(cache_file, "rb") as f:
+            enriched_cases = pickle.load(f)
+    else:
+        logger.info("Generating ground truth (this will take a moment)...")
+        enriched_cases = enrich_test_cases_with_ground_truth()
+        # Cache for future runs
+        with open(cache_file, "wb") as f:
+            pickle.dump(enriched_cases, f)
+        logger.info("Ground truth cached for future runs")
 
     # Sample if requested
     if sample_size and sample_size < len(enriched_cases):
