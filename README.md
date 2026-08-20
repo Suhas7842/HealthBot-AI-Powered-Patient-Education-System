@@ -5,7 +5,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-teal.svg)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A modular, extensible **Retrieval-Augmented Generation (RAG)** system for medical education, powered by LangGraph, Pinecone, and Google Gemini. Features intelligent query routing, multi-turn conversation support, and claim-level citation verification for explainable medical information. Provides accurate, evidence-based health information through interactive chat, quiz generation, and comprehensive evaluation framework.
+A modular, extensible **GenAI Orchestration System** for medical education, powered by LangGraph, Pinecone, and Google Gemini. Features **LLM agent with tool calling**, enabling dynamic routing between custom tools (hybrid retriever, medical calculator, PubMed API, web search). The agent reasons about queries and orchestrates multi-tool research, demonstrating true GenAI engineering beyond single-purpose RAG.
 
 ---
 
@@ -72,7 +72,72 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed diagrams.
 
 ---
 
-## 🚀 What's New in v2.3.0 (Phase 3: Proof & Validation)
+## 🤖 What's New in v3.0.0 (Phase 4: GenAI Orchestration)
+
+### Agent Architecture with Tool Calling
+
+HealthBot now features **LLM agent with dynamic tool selection** - a ReAct (Reason + Act) agent that orchestrates custom tools based on query analysis.
+
+**🔧 Custom Tools Built:**
+1. **Medical Calculator** ([medical_calculator.py](healthbot/tools/medical_calculator.py)) - BMI, medication dosage, kidney function calculations using validated medical formulas
+2. **PubMed API Client** ([pubmed_api.py](healthbot/tools/pubmed_api.py)) - Search 35M+ research papers via NCBI E-utilities with rate limiting
+3. **Hybrid Retriever** - Local knowledge base (716 PubMed articles) with BM25 + semantic search
+4. **Web Search** - Tavily integration for current health news
+
+**🎯 Key Differentiators:**
+- **LLM decides tools** - Agent reasons about which tools to call (not hardcoded if/else)
+- **Multi-tool capability** - Agent can call multiple tools per query (e.g., calculate BMI + explain health implications)
+- **YOUR infrastructure** - Tools are YOUR engineering (not ChatGPT wrapper)
+- **Tool engineering showcase** - Medical calculator proves it's not "just RAG with extra steps"
+
+**Example: Agent Reasoning**
+```
+User: "What's my BMI if I'm 70kg and 1.75m tall, and is that healthy?"
+
+Agent Reasoning:
+  Thought: Need to calculate BMI AND explain health implications
+  Plan: 
+    1. Use medical_calculator for BMI calculation
+    2. Use medical_rag_search for health context
+  Tools Called: [medical_calculator, medical_rag_search]
+
+Result: "Your BMI is 22.9, which falls in the normal range (18.5-24.9). 
+         Medical evidence shows normal BMI is associated with lower risk 
+         of cardiovascular disease [Source: PMID 12345]."
+```
+
+**📊 Agent Evaluation:**
+- **Tool Selection Accuracy**: Target ≥80% (agent chooses optimal tools)
+- **Multi-Tool Usage**: Target ≥70% on complex queries
+- **Test Cases**: 20 agent-specific test cases measuring tool selection quality
+- **Total Tests**: 80 Phase 4 tests (calculator: 34, PubMed: 14, tools: 21, graph: 11)
+
+**🏗️ Architecture Comparison:**
+
+| Aspect | Phase 3 (RAG Pipeline) | Phase 4 (GenAI Agent) |
+|--------|------------------------|----------------------|
+| Tool Selection | Hardcoded keyword matching | LLM-driven reasoning |
+| Workflow | Fixed 16-node pipeline | Dynamic ReAct agent |
+| Capabilities | Retrieval only | Retrieval + Computation + API |
+| Tool Count | 2 (RAG + Tavily) | 4 (RAG + Calculator + PubMed + Web) |
+| Interview Framing | "I built a RAG system" | "I built custom tools with LLM orchestration" |
+
+**📝 Files Added:**
+- [`healthbot/tools/medical_calculator.py`](healthbot/tools/medical_calculator.py) - Medical calculations
+- [`healthbot/tools/pubmed_api.py`](healthbot/tools/pubmed_api.py) - PubMed E-utilities integration
+- [`healthbot/agent_tools.py`](healthbot/agent_tools.py) - LangChain tool wrappers
+- [`healthbot/agent_graph.py`](healthbot/agent_graph.py) - ReAct agent workflow
+- [`healthbot/prompts_agent.py`](healthbot/prompts_agent.py) - Agent system prompts
+- [`healthbot/evaluation/agent_eval.py`](healthbot/evaluation/agent_eval.py) - Agent evaluation
+
+**💡 Interview Story:**
+> "I built 4 custom tools: hybrid retriever (Phase 1), medical calculator (Phase 4), PubMed client (Phase 4), and web search. I expose these via LangChain tool API with structured schemas. An LLM agent analyzes queries and routes to the appropriate tools - it's not generating answers, it's deciding which of MY tools to invoke. For example, 'What's my BMI?' triggers MY calculator, not ChatGPT's general knowledge. This demonstrates tool engineering, not prompt engineering."
+
+---
+
+## 🚀 Previous Releases
+
+### v2.3.0 (Phase 3: Proof & Validation)
 
 ### Phase 3A: Experimental Validation
 - **Master Evaluation Runner** - One-command orchestration of all evaluations ([run_all_evaluations.py](healthbot/evaluation/run_all_evaluations.py))
