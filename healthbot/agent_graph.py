@@ -76,14 +76,16 @@ def safety_check_node(state: PatientState) -> Dict[str, Any]:
     Returns:
         Updated state with emergency detection results
     """
+    from healthbot.safety import get_emergency_response
+
     topic = state.get("topic", "")
 
     # Check for emergency keywords
-    emergency_result = check_emergency(topic)
+    is_emergency = check_emergency(topic)
 
     return {
-        "emergency_detected": emergency_result.get("is_emergency", False),
-        "summary": emergency_result.get("message") if emergency_result.get("is_emergency") else None,
+        "emergency_detected": is_emergency,
+        "summary": get_emergency_response() if is_emergency else None,
     }
 
 
