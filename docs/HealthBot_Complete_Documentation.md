@@ -1,22 +1,34 @@
 # HealthBot: AI-Powered Medical RAG System - Technical Documentation
 
-**Version**: 2.0.0 (Enhanced with Evaluation & Reranking)  
-**Last Updated**: August 20, 2026  
+**Version**: 2.1.0 (Enhanced with Intelligent Routing & Conversational AI)  
+**Last Updated**: August 20, 2026 (Phase 2B)  
 **Repository**: https://github.com/Suhas7842/HealthBot-AI-Powered-Patient-Education-System
 
 ---
 
 ## Executive Summary
 
-HealthBot is an **engineered and evaluated medical RAG system** featuring hybrid retrieval, cross-encoder reranking, evidence validation, and comprehensive evaluation infrastructure. The system demonstrates production-grade GenAI engineering with quantitative metrics, systematic improvements, and proper testing practices.
+HealthBot is an **engineered, evaluated, and intelligent medical RAG system** featuring hybrid retrieval, cross-encoder reranking, query classification, multi-turn conversation support, evidence validation, and comprehensive evaluation infrastructure. The system demonstrates production-grade GenAI engineering with quantitative metrics, systematic improvements, semantic understanding, and proper testing practices.
 
 ### Key Features
 
+✅ **Intelligent Query Routing** (Phase 2B):
+- Intent classification (informational/diagnostic/treatment/preventive)
+- Complexity analysis (simple/moderate/complex)
+- Adaptive retrieval: k=5-9 based on query characteristics
+- Pattern-based classification (no LLM calls, <1ms latency)
+
+✅ **Multi-Turn Conversational AI** (Phase 2B):
+- Follow-up query detection (pronouns, continuation phrases)
+- Context-aware query rewriting with LLM fallback
+- Conversation state tracking (previous_topic, turns, last_summary)
+- Natural interactions: "What are the symptoms?" after "What is diabetes?"
+
 ✅ **Hybrid Retrieval with Reranking**:
 - Semantic search (Pinecone) + BM25 keyword + RRF fusion
-- Optional cross-encoder reranking (ms-marco-MiniLM-L-12-v2)
+- Configurable cross-encoder reranking (ms-marco-MiniLM-L-12-v2)
+- Production-ready: USE_RERANKER environment variable (Phase 2A)
 - Expected: +5% recall, +8.5% answer relevancy improvement
-- Architecture balances speed (recall) and accuracy (precision)
 
 ✅ **Hallucination Prevention**:
 - Evidence validation with quality gates (≥3 docs, avg score ≥0.015, ≥2 sources)
@@ -27,12 +39,12 @@ HealthBot is an **engineered and evaluated medical RAG system** featuring hybrid
 - IR metrics: Recall@K, Precision@K, MRR, nDCG@K, Hit Rate
 - Answer quality: Faithfulness, Relevancy (RAGAS-style)
 - Systematic experiments comparing 4 retrieval strategies
-- Ground truth generation based on condition matching
+- Evaluation guide with 3-tier hierarchy (Phase 2A)
 
 ✅ **Production Practices**:
-- 43 passing unit tests (retrieval, safety, reranker, metrics)
-- LangGraph: 14-node stateful workflow with evidence validation
-- Evaluation infrastructure: simple_ragas.py, experiments.py
+- 72 passing unit tests (routing, retrieval, safety, reranker, conversation)
+- LangGraph: 14-node stateful workflow with intelligent routing
+- Evaluation infrastructure: simple_ragas.py, experiments.py, EVALUATION_GUIDE.md
 - Cloud-native: Pinecone (2,578 vectors) + Google Gemini
 
 **Tech Stack**: Python 3.10+, LangGraph 0.2.19, Pinecone, Google Gemini Flash, sentence-transformers, FastAPI, Streamlit, pytest
@@ -42,15 +54,17 @@ HealthBot is an **engineered and evaluated medical RAG system** featuring hybrid
 ## Table of Contents
 
 1. [System Architecture](#1-system-architecture)
-2. [Hybrid Retrieval with Reranking](#2-hybrid-retrieval-with-reranking)
-3. [Evidence Validation & Hallucination Prevention](#3-evidence-validation--hallucination-prevention)
-4. [Evaluation Metrics & Infrastructure](#4-evaluation-metrics--infrastructure)
-5. [LangGraph Workflow](#5-langgraph-workflow)
-6. [Technical Implementation](#6-technical-implementation)
-7. [Testing & Quality Assurance](#7-testing--quality-assurance)
-8. [Deployment & Configuration](#8-deployment--configuration)
-9. [Interview Talking Points](#9-interview-talking-points)
-10. [Quick Start Guide](#10-quick-start-guide)
+2. [Intelligent Query Routing](#2-intelligent-query-routing-phase-2b)
+3. [Multi-Turn Conversational AI](#3-multi-turn-conversational-ai-phase-2b)
+4. [Hybrid Retrieval with Reranking](#4-hybrid-retrieval-with-reranking)
+5. [Evidence Validation & Hallucination Prevention](#5-evidence-validation--hallucination-prevention)
+6. [Evaluation Metrics & Infrastructure](#6-evaluation-metrics--infrastructure)
+7. [LangGraph Workflow](#7-langgraph-workflow)
+8. [Technical Implementation](#8-technical-implementation)
+9. [Testing & Quality Assurance](#9-testing--quality-assurance)
+10. [Deployment & Configuration](#10-deployment--configuration)
+11. [Interview Talking Points](#11-interview-talking-points)
+12. [Quick Start Guide](#12-quick-start-guide)
 
 ---
 
@@ -98,13 +112,291 @@ Safety Check (23 emergency keywords)
 1. **Safety Layer**: Emergency keyword detection → immediate routing
 2. **Hybrid Retrieval**: Semantic + BM25 + RRF for balanced recall/precision
 3. **Optional Reranking**: Cross-encoder for improved ranking quality
-4. **Evidence Validation**: Quality gates prevent hallucination
-5. **Structured Generation**: Pydantic schemas ensure consistency
-6. **Evaluation Infrastructure**: Comprehensive metrics and testing
+4. **Intelligent Routing**: Query classification optimizes retrieval parameters
+5. **Conversational Context**: Multi-turn support with follow-up detection
+6. **Evidence Validation**: Quality gates prevent hallucination
+7. **Structured Generation**: Pydantic schemas ensure consistency
+8. **Evaluation Infrastructure**: Comprehensive metrics and testing
 
 ---
 
-## 2. Hybrid Retrieval with Reranking
+## 2. Intelligent Query Routing (Phase 2B)
+
+### Overview
+
+The query classification system analyzes user queries to optimize retrieval strategy based on **intent** and **complexity**. This moves beyond one-size-fits-all retrieval to adaptive, context-aware parameter selection.
+
+**Why It Matters:**
+- Different query types need different retrieval strategies
+- Informational queries benefit from breadth (more sources)
+- Treatment queries need precision (higher quality threshold)
+- Complex multi-part questions require more coverage
+
+### Intent Classification
+
+**Query Types:**
+
+| Intent | Description | Example | Retrieval Strategy |
+|--------|-------------|---------|-------------------|
+| **INFORMATIONAL** | "What is X?" - General overview | "What is Type 2 diabetes?" | k=7 (comprehensive coverage) |
+| **DIAGNOSTIC** | "What causes X?" - Symptoms, risk factors | "What are diabetes symptoms?" | k=6, threshold=0.020 (symptoms + causes) |
+| **TREATMENT** | "How to treat X?" - Medications, therapy | "How is hypertension treated?" | k=5, threshold=0.020 (high precision) |
+| **PREVENTIVE** | "How to prevent X?" - Prevention strategies | "How to prevent heart disease?" | k=5 (prevention focus) |
+
+**Classification Method:**
+- **Fast rule-based pattern matching** (no LLM calls, <1ms)
+- Regex patterns for each intent category
+- Priority order: preventive → treatment → diagnostic → informational
+- Default to INFORMATIONAL for safety (broadest coverage)
+
+**Code Example:**
+```python
+from healthbot.routing import QueryClassifier
+
+classifier = QueryClassifier()
+
+# Intent classification
+query = "How is diabetes treated?"
+intent = classifier.classify_intent_fast(query)
+# Returns: QueryIntent.TREATMENT
+
+# Get optimized retrieval params
+params = classifier.get_retrieval_params(intent, complexity)
+# Returns: {"k": 5, "score_threshold": 0.020}
+```
+
+### Complexity Analysis
+
+**Complexity Levels:**
+
+| Level | Criteria | Example | Effect |
+|-------|----------|---------|--------|
+| **SIMPLE** | <8 words, no multi-part indicators | "What is diabetes?" | Base k value |
+| **MODERATE** | 8-15 words or 1 indicator ("and") | "Diabetes symptoms and causes" | Base k value |
+| **COMPLEX** | >15 words or 2+ indicators ("and", "vs") | "Difference between Type 1 and Type 2?" | Base k + 2 |
+
+**Complexity Indicators:**
+- Multi-part: "and", "or", "vs", "versus"
+- Comparison: "difference between", "compare"
+- Relationships: "relationship between"
+- Medical specificity: "risk factors"
+
+### Retrieval Parameter Optimization
+
+**Decision Matrix:**
+
+```
+Query: "What is Type 2 diabetes?"
+  → Intent: INFORMATIONAL
+  → Complexity: SIMPLE
+  → Parameters: k=7, threshold=0.015
+  → Reasoning: Comprehensive overview needs more sources
+
+Query: "How is hypertension treated?"
+  → Intent: TREATMENT
+  → Complexity: SIMPLE
+  → Parameters: k=5, threshold=0.020
+  → Reasoning: Medical advice needs high precision, fewer high-quality sources
+
+Query: "What are the symptoms, causes, and treatments for diabetes?"
+  → Intent: DIAGNOSTIC (symptoms pattern matches first)
+  → Complexity: COMPLEX (2 indicators: "and", multi-part)
+  → Parameters: k=8 (6 base + 2 complex), threshold=0.020
+  → Reasoning: Multi-part question needs more coverage + diagnostic precision
+```
+
+### Integration with Retrieval
+
+```python
+# In retrieve_medical_knowledge node (healthbot/nodes.py)
+
+classifier = get_classifier()
+intent = classifier.classify_intent_fast(topic)
+complexity = classifier.classify_complexity(topic)
+
+retrieval_params = classifier.get_retrieval_params(intent, complexity)
+k = retrieval_params["k"]
+
+logger.info(f"Query classification: intent={intent.value}, complexity={complexity.value}")
+logger.info(f"Using k={k} for this query type")
+
+# Retrieve with optimized k
+results = tool_selector.select_and_search(topic, k=k)
+```
+
+**Impact:**
+- No more one-size-fits-all k=5
+- Treatment queries get higher precision (threshold=0.020 vs 0.015)
+- Complex queries automatically get more sources
+- Fast pattern matching adds <1ms latency
+
+---
+
+## 3. Multi-Turn Conversational AI (Phase 2B)
+
+### Overview
+
+The system supports natural follow-up questions through conversation context tracking and query rewriting. Users can ask "What are the symptoms?" after "What is diabetes?" and the system understands the implicit reference.
+
+**Why It Matters:**
+- Natural conversation flow (no need to repeat context every time)
+- Improved user experience (shorter, more natural queries)
+- Better retrieval (rewritten queries are explicit and self-contained)
+
+### Follow-Up Detection
+
+**Follow-Up Indicators:**
+
+| Type | Patterns | Example |
+|------|----------|---------|
+| **Pronouns** | "it", "this", "that", "these", "those" | "How do I treat it?" |
+| **Continuation** | "tell me more", "explain further", "what about" | "Tell me more" |
+| **Short implicit** | <5 words, no question words | "The symptoms" |
+| **Conjunctions** | Starting with "and", "but", "also" | "And what about prevention?" |
+
+**Detection Logic:**
+```python
+def is_follow_up_query(query: str, previous_topic: str) -> bool:
+    if not previous_topic:
+        return False
+    
+    # Check for pronouns, continuation phrases, short queries
+    has_follow_up_pattern = any(pattern matches)
+    word_count = len(query.split())
+    has_question_word = "what" | "how" | "why" in query
+    
+    is_short_implicit = word_count < 5 and not has_question_word
+    
+    return has_follow_up_pattern or is_short_implicit
+```
+
+### Context-Aware Query Rewriting
+
+**Rewriting Examples:**
+
+| Turn | Original Query | Previous Topic | Rewritten Query |
+|------|---------------|----------------|-----------------|
+| 1 | "What is Type 2 diabetes?" | - | (no rewrite - first turn) |
+| 2 | "What are the symptoms?" | "diabetes" | "What are the symptoms of diabetes?" |
+| 3 | "How do I treat it?" | "diabetes" | "How do I treat diabetes?" |
+| 4 | "What about prevention?" | "diabetes" | "What about prevention of diabetes?" |
+
+**Rewriting Strategy:**
+1. **LLM-based rewriting** (primary): Uses LLM with context to rewrite query naturally
+2. **Fallback**: Simple string replacement if LLM unavailable
+
+**LLM Rewriting Prompt:**
+```
+Previous Topic: diabetes
+Conversation Summary: User asked about Type 2 diabetes. Summary provided causes, symptoms, treatment.
+Follow-up Query: What are the symptoms?
+
+Task: Rewrite to be self-contained with explicit context.
+Return ONLY the rewritten query.
+
+Output: "What are the symptoms of Type 2 diabetes?"
+```
+
+### Conversation State Tracking
+
+**State Fields:**
+```python
+class PatientState(TypedDict):
+    # Conversational context
+    previous_topic: str | None  # Last discussed topic
+    conversation_turns: int  # Number of turns
+    last_summary: str | None  # Previous summary for context
+    is_follow_up: bool  # Whether current query is follow-up
+    
+    # Query classification
+    query_intent: str | None  # Intent classification result
+    query_complexity: str | None  # Complexity classification result
+```
+
+**Workflow Integration:**
+```python
+# In collect_patient_topic (healthbot/nodes.py)
+
+def collect_patient_topic(state: PatientState) -> dict:
+    topic = state.get("topic", "")
+    previous_topic = state.get("previous_topic")
+    
+    classifier = get_classifier()
+    is_follow_up = classifier.is_follow_up_query(topic, previous_topic)
+    
+    if is_follow_up and previous_topic:
+        # Rewrite query with context
+        last_summary = state.get("last_summary", "")
+        topic = classifier.rewrite_with_context(topic, previous_topic, last_summary)
+        logger.info(f"Rewritten query: '{original}' → '{topic}'")
+    
+    return {
+        "topic": topic,
+        "conversation_turns": state.get("conversation_turns", 0) + 1,
+        "is_follow_up": is_follow_up,
+    }
+```
+
+**Context Storage:**
+```python
+# In generate_grounded_summary (healthbot/nodes.py)
+
+def generate_grounded_summary(state: PatientState) -> dict:
+    # ... generate summary ...
+    
+    return {
+        "summary": summary_text,
+        "previous_topic": topic,  # Store for next turn
+        "last_summary": summary_text,  # Store for context rewriting
+    }
+```
+
+### Example Conversation Flow
+
+**Turn 1:**
+```
+User: "What is Type 2 diabetes?"
+System:
+  - Intent: INFORMATIONAL
+  - Complexity: SIMPLE
+  - k=7 (comprehensive overview)
+  - Generate summary about diabetes
+  - Store: previous_topic="Type 2 diabetes"
+```
+
+**Turn 2:**
+```
+User: "What are the symptoms?"
+System:
+  - Detect: Follow-up (short query without question words)
+  - Rewrite: "What are the symptoms of Type 2 diabetes?"
+  - Intent: DIAGNOSTIC
+  - Complexity: SIMPLE  
+  - k=6, threshold=0.020 (diagnostic precision)
+  - Retrieve symptoms with rewritten query
+```
+
+**Turn 3:**
+```
+User: "How do I treat it?"
+System:
+  - Detect: Follow-up (pronoun "it")
+  - Rewrite: "How do I treat Type 2 diabetes?"
+  - Intent: TREATMENT
+  - Complexity: SIMPLE
+  - k=5, threshold=0.020 (treatment precision)
+  - Retrieve treatment information
+```
+
+**Impact:**
+- Natural conversation (no repetition needed)
+- Explicit retrieval queries (better results)
+- Adds ~200ms latency for LLM rewriting (worthwhile tradeoff)
+- Shows understanding of conversational AI beyond single-turn
+
+---
+
+## 4. Hybrid Retrieval with Reranking
 
 ### Retrieval Architecture
 
@@ -566,15 +858,62 @@ def check_emergency(query: str) -> bool:
 
 ---
 
-## 7. Testing & Quality Assurance
+## 9. Testing & Quality Assurance
 
 ### Unit Test Suite
 
-**Total**: 43 passing tests across 3 test files
+**Total**: 72 passing tests across 4 test files (Phase 2B: +29 routing/conversation tests)
 
 #### Test Files
 
-**1. tests/test_retrieval.py** (18 tests)
+**1. tests/test_routing.py** (29 tests) - **NEW in Phase 2B**
+
+```python
+class TestQueryIntentClassification:
+    def test_informational_intent_basic()
+    def test_diagnostic_intent_basic()
+    def test_treatment_intent_basic()
+    def test_preventive_intent_basic()
+    def test_intent_priority_order()
+    def test_intent_default_to_informational()
+
+class TestQueryComplexityClassification:
+    def test_simple_complexity()
+    def test_moderate_complexity()
+    def test_complex_complexity()
+    def test_complexity_by_word_count()
+
+class TestRetrievalParameterOptimization:
+    def test_informational_retrieval_params()
+    def test_treatment_retrieval_params()
+    def test_diagnostic_retrieval_params()
+    def test_complex_increases_k()
+    def test_preventive_retrieval_params()
+
+class TestFollowUpDetection:
+    def test_follow_up_with_pronoun_it()
+    def test_follow_up_with_pronoun_this()
+    def test_follow_up_with_continuation_phrase()
+    def test_follow_up_short_query_without_question_word()
+    def test_not_follow_up_without_previous_topic()
+    def test_not_follow_up_explicit_query()
+    def test_follow_up_starting_with_and()
+
+class TestQueryRewriting:
+    def test_rewrite_fallback_with_pronoun_it()
+    def test_rewrite_fallback_with_pronoun_this()
+    def test_rewrite_with_explicit_context()
+
+class TestEndToEndClassification:
+    def test_simple_informational_query()
+    def test_complex_treatment_query()
+    def test_diagnostic_moderate_query()
+
+class TestSingletonPattern:
+    def test_get_classifier_singleton()
+```
+
+**2. tests/test_retrieval.py** (18 tests)
 
 ```python
 class TestHybridRetriever:
@@ -746,7 +1085,7 @@ docker run -p 8000:8000 -p 8501:8501 \
 
 ---
 
-## 9. Interview Talking Points
+## 11. Interview Talking Points
 
 ### Q1: "How do you evaluate RAG quality?"
 
@@ -768,10 +1107,15 @@ docker run -p 8000:8000 -p 8501:8501 \
 **Answer**:
 > "Bi-encoder models used in semantic search encode query and document separately, then compute similarity via dot product or cosine. This is fast - O(1) at query time since documents are pre-encoded - and great for recall, finding candidate documents from millions. Cross-encoders jointly encode query+document, allowing the attention mechanism to model their interaction directly. This is slower - O(N) with query time - but much more accurate for relevance scoring. My architecture uses bi-encoders for retrieval (Pinecone + BM25 retrieve top 20 candidates in ~280ms) and cross-encoders for reranking (20 → 5 in ~40ms), balancing speed and precision. Adding the reranker improved answer relevancy from 0.82 to 0.89, making the latency tradeoff worthwhile."
 
-### Q5: "What would you improve next?"
+### Q5: "How does your system handle conversational context?" **(Phase 2B)**
 
 **Answer**:
-> "Three areas: First, query classification to route different query types to specialized strategies - fact-lookup queries could skip reranking for speed, while complex medical questions could use heavier reranking. Second, a user feedback loop where medical professionals validate a sample of answers, which feeds back into retrieval evaluation and helps tune thresholds. Third, multi-turn conversation support to maintain context across questions, which would require updating the evidence validation logic to consider conversation history. I'd prioritize the first because it offers immediate latency wins for simple queries while maintaining quality for complex ones."
+> "The system supports natural multi-turn conversations through query classification and context tracking. When a user asks 'What is diabetes?' followed by 'What are the symptoms?', the second query is detected as a follow-up based on patterns like short length without question words. The system rewrites it to 'What are the symptoms of diabetes?' using the conversation context, then retrieves with that explicit query. This gives better retrieval results than using the ambiguous follow-up directly. I also implemented intent classification - informational queries get k=7 for comprehensive overview, treatment queries get k=5 with higher precision threshold (0.020 vs 0.015), and complex queries automatically get +2 sources. This moves beyond one-size-fits-all retrieval to adaptive, context-aware parameters. The classification is pattern-based so it adds less than 1ms latency."
+
+### Q6: "What would you improve next?"
+
+**Answer**:
+> "Three areas: First, citation verification at claim-level granularity - general faithfulness scores measure overall grounding, but medical information needs provenance tracking so users can verify which specific source supports each claim. Second, query complexity-based evidence validation thresholds - simple 'What is X' questions shouldn't require the same evidence bar as complex treatment questions. Third, user feedback loop where medical professionals validate a sample of answers, feeding back into retrieval tuning and threshold adjustment. I'd prioritize citation verification because explainability is critical for medical applications - 'the answer is grounded' isn't enough, users need to see 'insulin resistance [Source 1, 2]' style attribution."
 
 ---
 
@@ -939,7 +1283,23 @@ HealthBot-AI-Powered-Patient-Education-System/
 
 ## Version History
 
-**v2.0.0** (August 20, 2026):
+**v2.1.0 - Phase 2B: Intelligent Routing & Conversational AI** (August 20, 2026):
+- ✅ Added query classification system (intent + complexity analysis)
+- ✅ Implemented adaptive retrieval parameters based on query type
+- ✅ Added multi-turn conversation support with follow-up detection
+- ✅ Context-aware query rewriting for natural interactions
+- ✅ Conversation state tracking (previous_topic, turns, last_summary)
+- ✅ Created comprehensive routing test suite (29 new tests, 72 total)
+- ✅ Pattern-based classification (<1ms latency, no LLM calls)
+
+**v2.0.1 - Phase 2A: Production Readiness** (August 20, 2026):
+- ✅ Enabled reranking in production with USE_RERANKER configuration
+- ✅ Added reranking latency tracking (~40ms overhead logging)
+- ✅ Created evaluation guide with 3-tier hierarchy (EVALUATION_GUIDE.md)
+- ✅ Added tier headers to all evaluation scripts
+- ✅ Updated README with clear evaluation guidance
+
+**v2.0.0 - Phase 1: Evaluation & Reranking** (August 20, 2026):
 - ✅ Added cross-encoder reranking for improved precision
 - ✅ Implemented evidence validation and hallucination prevention
 - ✅ Added proper IR evaluation metrics (Recall@K, MRR, nDCG)
