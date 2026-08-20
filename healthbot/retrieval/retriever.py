@@ -226,6 +226,8 @@ class HybridRetriever:
 
         # Apply reranking if enabled
         if self.use_reranker and self.reranker:
+            import time
+            rerank_start = time.time()
             logger.info(f"Reranking {len(combined_results)} candidates with cross-encoder")
             final_results = self.reranker.rerank(
                 query=query,
@@ -233,6 +235,11 @@ class HybridRetriever:
                 top_k=k,
                 score_field="rerank_score",
             )
+            rerank_latency = (time.time() - rerank_start) * 1000  # Convert to ms
+            logger.info(f"Reranking completed in {rerank_latency:.1f}ms")
+            # Store latency for observability
+            for doc in final_results:
+                doc["rerank_latency_ms"] = rerank_latency
         else:
             # Return top k from RRF
             final_results = combined_results[:k]

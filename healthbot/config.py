@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     CHUNK_SIZE: int = 500
     CHUNK_OVERLAP: int = 50
 
+    # Reranking Settings
+    USE_RERANKER: bool = True  # Enable cross-encoder reranking (adds ~40ms)
+    RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-12-v2"
+    RERANKER_TOP_K_MULTIPLIER: int = 4  # Retrieve 4x candidates for reranking
+
     # Model configuration for loading from .env or config.env
     model_config = SettingsConfigDict(
         env_file=[".env", "config.env"],

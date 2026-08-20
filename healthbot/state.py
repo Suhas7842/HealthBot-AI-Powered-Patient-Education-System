@@ -40,3 +40,17 @@ class PatientState(TypedDict):
     # Safety tracking
     emergency_detected: bool
     disclaimer_shown: bool
+
+    # Reranking tracking
+    reranker_used: bool  # Whether reranking was applied
+    rerank_latency_ms: float | None  # Reranking latency for observability
+
+    # Query classification
+    query_intent: str | None  # "informational", "diagnostic", "treatment", "preventive"
+    query_complexity: str | None  # "simple", "moderate", "complex"
+
+    # Conversation context
+    previous_topic: str | None  # Last discussed topic
+    conversation_turns: int  # Number of turns in current conversation
+    last_summary: str | None  # Summary from previous turn for context
+    is_follow_up: bool  # Whether current query is a follow-up

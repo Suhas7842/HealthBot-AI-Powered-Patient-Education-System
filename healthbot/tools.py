@@ -48,9 +48,10 @@ class RAGTool:
                 self.retriever = PineconeVectorStore()
                 logger.info("RAG tool initialized with Pinecone (cloud)")
             else:
-                # Fallback to local ChromaDB
-                self.retriever = HybridRetriever()
-                logger.info("RAG tool initialized with ChromaDB (local)")
+                # Fallback to local ChromaDB with configurable reranking
+                self.retriever = HybridRetriever(use_reranker=settings.USE_RERANKER)
+                reranker_status = "enabled" if settings.USE_RERANKER else "disabled"
+                logger.info(f"RAG tool initialized with ChromaDB (local, reranker={reranker_status})")
             self.available = True
         except Exception as e:
             logger.error(f"Failed to initialize RAG tool: {e}")
