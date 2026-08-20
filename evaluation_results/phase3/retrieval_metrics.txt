@@ -1,0 +1,25 @@
+[2026-08-20 22:10:34] [numexpr.utils] [INFO] NumExpr defaulting to 16 threads.
+[2026-08-20 22:11:05] [datasets] [INFO] PyTorch version 2.13.0 available.
+================================================================================
+RETRIEVAL METRICS EVALUATION
+================================================================================
+
+This evaluates retrieval quality using proper IR metrics:
+  • Recall@K: What % of relevant documents were retrieved?
+  • Precision@K: What % of retrieved documents are relevant?
+  • MRR: How highly is the first relevant document ranked?
+  • nDCG@K: Quality of ranking (higher scores for relevant docs at top)
+  • Hit Rate@K: Did we retrieve at least one relevant document?
+
+================================================================================
+
+How many test cases? (1-50, Enter for all 50): Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\rsuha\Downloads\HealthBot-AI-Powered-Patient-Education-System\healthbot\evaluation\eval_retrieval_metrics.py", line 273, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\rsuha\Downloads\HealthBot-AI-Powered-Patient-Education-System\healthbot\evaluation\eval_retrieval_metrics.py", line 236, in main
+    sample_input = input("\nHow many test cases? (1-50, Enter for all 50): ").strip()
+                   ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+EOFError: EOF when reading a line
