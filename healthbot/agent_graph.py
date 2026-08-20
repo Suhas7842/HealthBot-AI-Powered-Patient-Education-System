@@ -129,10 +129,10 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
 
     # Create ReAct agent
     # This is the KEY: LangGraph's prebuilt ReAct agent handles tool calling loop
+    # Note: System prompt is added via messages, not state_modifier
     agent_executor = create_react_agent(
         llm,
         tools,
-        state_modifier=get_agent_prompt(),  # System prompt guides tool selection
     )
 
     # Prepare input for agent
