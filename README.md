@@ -119,8 +119,10 @@ Result: "Your BMI is 22.9, which falls in the normal range (18.5-24.9).
 - **Evaluation Script**: Automated runner complete ([run_agent_evaluation.py](run_agent_evaluation.py))
 - **Bug Fix (v3.1.0)**: Fixed P0 tool-call tracking bug (was checking wrong LangChain message attribute, causing 0% detection)
 - **Integration Tests**: 2 end-to-end workflow tests now passing, validating tool coordination
-- **Status**: Framework ready for full 20-case evaluation (requires Gemini quota or paid tier)
-- **Next Steps**: Run full evaluation with actual LLM calls to measure tool selection accuracy
+- **Status**: Framework ready, evaluation infrastructure validated via 222 unit tests
+- **API Quota**: Gemini free tier (20 req/day) currently exhausted - evaluation pending quota reset or paid tier
+- **Verification Script**: `verify_agent_behavior.py` ready to run (4 targeted queries)
+- **Full Evaluation**: `run_agent_evaluation.py` (20 test cases with precision/recall/F1 metrics)
 
 **Why This Matters:**
 - Unit tests validate infrastructure correctness (agent CAN call tools)
