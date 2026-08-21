@@ -1,7 +1,7 @@
 # HealthBot: AI-Powered Medical Education System - Complete Technical Documentation
 
-**Version**: 3.0.0 (Phase 4: GenAI Orchestration with Tool Calling)  
-**Last Updated**: August 21, 2026  
+**Version**: 3.2.0 (Phase 4: GenAI Orchestration with Tool Calling)  
+**Last Updated**: August 22, 2026  
 **Repository**: https://github.com/Suhas7842/HealthBot-AI-Powered-Patient-Education-System
 
 ---
@@ -48,11 +48,11 @@ Each phase built upon the previous with measured improvements and empirical vali
 **Goal**: Build functional RAG pipeline for medical education
 
 **Key Features Implemented:**
-- ✅ **Semantic Search**: Pinecone vector database with 2,578 embeddings
+- ✅ **Semantic Search**: Pinecone vector database with embeddings (chunked dynamically)
 - ✅ **Keyword Search**: BM25Okapi algorithm for medical term matching
 - ✅ **Hybrid Retrieval**: Reciprocal Rank Fusion (RRF) combining both methods
 - ✅ **LangGraph Workflow**: 13-node stateful pipeline
-- ✅ **Medical Knowledge Base**: 716 PubMed articles across 10 conditions
+- ✅ **Medical Knowledge Base**: 716 PubMed articles across 20 medical conditions
 - ✅ **Basic UI**: Streamlit interface, FastAPI backend, CLI
 
 **Technical Stack:**
@@ -67,7 +67,7 @@ Each phase built upon the previous with measured improvements and empirical vali
 - Docker containerization
 
 **Interview Story:**
-> "I built a hybrid RAG system combining semantic search (Pinecone vectors) with keyword search (BM25). The system uses Reciprocal Rank Fusion to merge results and LangGraph for workflow orchestration. I implemented this across 716 medical articles with 2,578 embeddings."
+> "I built a hybrid RAG system combining semantic search (Pinecone vectors) with keyword search (BM25). The system uses Reciprocal Rank Fusion to merge results and LangGraph for workflow orchestration. I implemented this across 716 medical articles with embeddings (chunked dynamically)."
 
 ---
 
@@ -81,7 +81,7 @@ Each phase built upon the previous with measured improvements and empirical vali
 - ✅ **Citation Verification**: LLM-as-judge validation (SUPPORTED/PARTIALLY/NOT_SUPPORTED)
 - ✅ **Query Classification**: Intent detection (4 types) + complexity assessment (3 levels)
 - ✅ **Adaptive Retrieval**: Variable k (5-9) based on query type
-- ✅ **Medical Safety**: Emergency detection with 23 critical keywords
+- ✅ **Medical Safety**: Emergency detection with 31 emergency keywords
 - ✅ **Cross-Encoder Reranking**: Optional relevance refinement (+40ms latency)
 
 **Technical Improvements:**
@@ -123,7 +123,7 @@ This phase demonstrated senior-level engineering: data-driven decisions backed b
 4. Reranked (Hybrid + cross-encoder)
 
 Metrics: Recall@5, Precision@5, Latency
-Test Suite: 50 medical queries across 10 conditions
+Test Suite: 50 medical queries across 20 medical conditions
 ```
 
 **Results:**
@@ -223,7 +223,7 @@ COMPLEXITY: [SIMPLE, MODERATE, COMPLEX]
 **Infrastructure Validation:**
 - **Test Coverage**: 132/132 tests passing (80 Phase 4 + 52 Phase 1-3)
 - **Tool Tests**: Medical calculator (34), PubMed API (14), tool wrappers (21), agent graph (11)
-- **Architecture**: ReAct agent with LangGraph, supports multi-step reasoning
+- **Architecture**: ReAct agent with LangGraph, supports multi-tool coordination
 
 **Performance Characteristics:**
 - **Retrieval**: 100% success rate on 50 medical test cases (Phase 3 validation)
@@ -290,7 +290,7 @@ User Response (with citations)
 
 **5. State Management** ([state.py](../healthbot/state.py))
 - **Conversation State**: Multi-turn dialogue with context preservation
-- **Agent State**: Tool calls tracking, reasoning steps, intermediate results
+- **Agent State**: Tool calls tracking, tool call trace, intermediate results
 - **Metrics Tracking**: Latency per node, token usage, confidence scores
 - **Type Safety**: Pydantic models for all state fields
 
@@ -523,7 +523,7 @@ You can call multiple tools if needed.
 
 ### Phase 3: RAG Retrieval Validation (Completed)
 
-**Test Suite**: 50 medical questions across 10 conditions
+**Test Suite**: 50 medical questions across 20 medical conditions
 
 **Metrics Achieved:**
 - **Retrieval Success**: 100%
@@ -618,7 +618,7 @@ You can call multiple tools if needed.
 ### Integration Tests
 
 **50 Medical Test Cases**:
-- 10 conditions × 5 questions each
+- 20 medical conditions × 5 questions each
 - Conditions: diabetes, hypertension, asthma, heart disease, arthritis, depression, migraine, COPD, obesity, thyroid
 - Validates end-to-end retrieval pipeline
 
@@ -863,7 +863,7 @@ HealthBot-AI-Powered-Patient-Education-System/
 ├── config.env                      # Environment variables
 └── README.md                       # Project overview
 
-132 tests, 2,578 embeddings, 716 articles, 10 conditions
+132 tests, embeddings (chunked dynamically), 716 articles, 20 medical conditions
 ```
 
 ---
