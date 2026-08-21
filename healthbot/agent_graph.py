@@ -21,6 +21,7 @@ from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 
 from healthbot.config import settings
 from healthbot.state import PatientState
@@ -117,12 +118,21 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
     topic = state.get("topic", "")
     messages = state.get("messages", [])
 
-    # Initialize LLM with tool calling
-    llm = ChatGoogleGenerativeAI(
-        model=settings.GEMINI_MODEL,
-        temperature=0.0,
-        google_api_key=settings.GOOGLE_API_KEY,
-    )
+    # Initialize LLM with tool calling (support both Gemini and OpenAI/Groq)
+    if settings.LLM_PROVIDER == "gemini":
+        llm = ChatGoogleGenerativeAI(
+            model=settings.GEMINI_MODEL,
+            temperature=0.0,
+            google_api_key=settings.GOOGLE_API_KEY,
+        )
+    else:  # openai or groq
+        llm = ChatOpenAI(
+            model=settings.OPENAI_MODEL,
+            temperature=settings.OPENAI_TEMPERATURE,
+            max_tokens=settings.OPENAI_MAX_TOKENS,
+            api_key=settings.OPENAI_API_KEY,
+            base_url=settings.OPENAI_BASE_URL,
+        )
 
     # Get all tools
     tools = get_all_tools()

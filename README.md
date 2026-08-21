@@ -107,10 +107,24 @@ Result: "Your BMI is 22.9, which falls in the normal range (18.5-24.9).
 ```
 
 **📊 Agent Evaluation:**
-- **Tool Selection Accuracy**: Target ≥80% (agent chooses optimal tools)
-- **Multi-Tool Usage**: Target ≥70% on complex queries
-- **Test Cases**: 20 agent-specific test cases measuring tool selection quality
-- **Total Tests**: 80 Phase 4 tests (calculator: 34, PubMed: 14, tools: 21, graph: 11)
+
+**Infrastructure Validation (Completed):**
+- **Unit Tests**: 80 Phase 4 tests passing (calculator: 34, PubMed: 14, tools: 21, graph: 11)
+- **Total Test Suite**: 132 tests (80 Phase 4 + 52 Phase 1-3) - 100% passing
+- **Architecture Proven**: Agent successfully orchestrates tools, handles multi-step reasoning, and manages tool failures
+
+**Empirical Agent Evaluation (Framework Ready, Pending API Quota):**
+- **Evaluation Framework**: 20 diverse test cases designed ([agent_eval.py](healthbot/evaluation/agent_eval.py))
+- **Test Coverage**: Single-tool, multi-tool, and tool-diversity scenarios
+- **Evaluation Script**: Automated runner complete ([run_agent_evaluation.py](run_agent_evaluation.py))
+- **Status**: Hit Gemini free tier quota (20 requests/day) during evaluation attempt
+- **Challenge**: Agent needs ~3-5 LLM calls per test case (60-100 total calls), exceeding free tier limits
+- **Next Steps**: Requires quota reset or paid tier for full empirical validation
+
+**Why This Matters:**
+- Unit tests validate infrastructure correctness (agent CAN call tools)
+- Empirical evaluation measures behavioral quality (agent CHOOSES correct tools)
+- This demonstrates realistic GenAI engineering constraints: quota planning for agentic workflows
 
 **🏗️ Architecture Comparison:**
 
