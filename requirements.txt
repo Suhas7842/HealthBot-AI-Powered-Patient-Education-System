@@ -1,12 +1,14 @@
 # Core LangChain and LangGraph
 langchain==0.2.16
 langchain-openai==0.1.23
+langchain-google-genai==1.0.10
 langchain-community==0.2.16
 langgraph==0.2.19
 langghainhub==0.1.21
 
 # Vector Store and Embeddings
 chromadb==0.4.24
+pinecone-client>=3.0.0
 sentence-transformers==2.7.0  # Includes cross-encoders for reranking
 
 # Data Processing
@@ -21,6 +23,9 @@ rank-bm25==0.2.2
 # Evaluation
 ragas==0.1.9
 datasets==2.19.0
+
+# LLM APIs
+google-generativeai>=0.3.0
 
 # API and Web
 fastapi==0.111.0

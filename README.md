@@ -16,11 +16,11 @@ A modular, extensible **GenAI Orchestration System** for medical education, powe
 - **🎯 Intelligent Query Routing** - Pattern-based query classification (informational/diagnostic/treatment/preventive) with adaptive retrieval parameters (k=5-9 based on query type)
 - **💬 Multi-Turn Conversation** - Context-aware follow-up detection and query rewriting for natural dialogue flows
 - **📝 Citation Verification** - Claim-level source attribution with LLM-as-judge verification for medical explainability
-- **📚 Real Medical Data** - 716 PubMed articles embedded as 2,578 chunks across 10 common conditions
+- **📚 Real Medical Data** - 716 PubMed articles (chunked at runtime) across 20 medical conditions
 - **🤖 LangGraph Orchestration** - 13-node stateful workflow with conditional routing
 - **✅ Structured Outputs** - Type-safe Pydantic models (no string parsing)
-- **🛡️ Medical Safety** - Emergency detection with 23 critical keywords
-- **📊 Comprehensive Evaluation** - RAGAS framework integrated + 50-case test suite + 97 unit tests
+- **🛡️ Medical Safety** - Emergency detection with 31 emergency keywords (see `healthbot/safety.py`)
+- **📊 Comprehensive Evaluation** - RAGAS framework integrated + 50-case test suite + 222 unit tests (including 42 adversarial security tests)
 
 ### 🚀 Deployment Options
 - **💬 Streamlit UI** - Interactive chat interface with metrics dashboard
@@ -30,13 +30,13 @@ A modular, extensible **GenAI Orchestration System** for medical education, powe
 
 ### 📈 Measured Performance
 - **Retrieval Success**: 100% (verified on full 50-case medical test suite)
-- **Average Latency**: 318ms per query (hybrid semantic + BM25 retrieval, +40ms with reranking)
+- **Average Latency**: 318ms per query (hybrid semantic + BM25 retrieval, +2.1s with reranking on CPU)
 - **Method Distribution**: 44% semantic, 31% BM25, 26% hybrid overlap
 - **Query Classification**: <1ms pattern-based intent/complexity detection (no LLM calls)
 - **Architecture**: Stateless containers (120 MB) enabling horizontal scaling
 - **Observability**: Tracks node latencies, token usage, retrieval scores, confidence metrics, query intent, conversation context
-- **Data**: 2,578 medical document embeddings in cloud vector database (Pinecone)
-- **Test Coverage**: 97 comprehensive unit tests (retrieval, safety, routing, citations, reranking, embeddings)
+- **Data**: 716 PubMed articles (chunked dynamically) in cloud vector database (Pinecone)
+- **Test Coverage**: 222 comprehensive unit tests (retrieval, safety, routing, citations, reranking, embeddings, agent, calculator, PubMed API, adversarial)
 - **Cost**: Free tier usage (Google Gemini 1,500 req/day, Pinecone 100K vectors)
 
 ---
@@ -90,11 +90,11 @@ HealthBot now features **LLM agent with dynamic tool selection** - a ReAct (Reas
 - **YOUR infrastructure** - Tools are YOUR engineering (not ChatGPT wrapper)
 - **Tool engineering showcase** - Medical calculator proves it's not "just RAG with extra steps"
 
-**Example: Agent Reasoning**
+**Example: Tool Orchestration**
 ```
 User: "What's my BMI if I'm 70kg and 1.75m tall, and is that healthy?"
 
-Agent Reasoning:
+Agent Tool Selection:
   Thought: Need to calculate BMI AND explain health implications
   Plan: 
     1. Use medical_calculator for BMI calculation
@@ -111,7 +111,7 @@ Result: "Your BMI is 22.9, which falls in the normal range (18.5-24.9).
 **Infrastructure Validation (Completed):**
 - **Unit Tests**: 80 Phase 4 tests passing (calculator: 34, PubMed: 14, tools: 21, graph: 11)
 - **Total Test Suite**: 132 tests (80 Phase 4 + 52 Phase 1-3) - 100% passing
-- **Architecture Proven**: Agent successfully orchestrates tools, handles multi-step reasoning, and manages tool failures
+- **Architecture Proven**: Agent successfully orchestrates tools, handles multi-tool coordination, and manages tool failures
 
 **Empirical Agent Evaluation (Infrastructure Fixed - v3.1.0):**
 - **Evaluation Framework**: 20 diverse test cases designed ([agent_eval.py](healthbot/evaluation/agent_eval.py))
@@ -132,7 +132,7 @@ Result: "Your BMI is 22.9, which falls in the normal range (18.5-24.9).
 
 | Aspect | Phase 3 (RAG Pipeline) | Phase 4 (GenAI Agent) |
 |--------|------------------------|----------------------|
-| Tool Selection | Hardcoded keyword matching | LLM-driven reasoning |
+| Tool Selection | Hardcoded keyword matching | LLM-driven tool selection |
 | Workflow | Fixed 16-node pipeline | Dynamic ReAct agent |
 | Capabilities | Retrieval only | Retrieval + Computation + API |
 | Tool Count | 2 (RAG + Tavily) | 4 (RAG + Calculator + PubMed + Web) |
@@ -171,7 +171,7 @@ Result: "Your BMI is 22.9, which falls in the normal range (18.5-24.9).
 - **50+ Adversarial Tests** - Security, robustness, edge cases ([test_adversarial.py](tests/test_adversarial.py))
 - **Test Categories** - Prompt injection, citation manipulation, boundary conditions, input validation, out-of-domain queries
 - **Testing Guide** - Comprehensive strategy documentation ([TESTING_GUIDE.md](docs/TESTING_GUIDE.md))
-- **Total Coverage** - 97+ unit tests with 100% pass rate on core functionality
+- **Total Coverage** - 222 unit tests with 100% pass rate on core functionality
 
 ### Quantitative Results (Phase 3)
 
@@ -211,7 +211,7 @@ Result: "Your BMI is 22.9, which falls in the normal range (18.5-24.9).
 - **Citation Quality Metrics** - Coverage (% claims cited), accuracy (% claims supported), attribution precision
 - **23 New Unit Tests** - Complete test suite for citation schemas and verification logic
 
-**Total Test Coverage**: 97 comprehensive unit tests (was 72 in Phase 1)
+**Total Test Coverage**: 222 comprehensive unit tests
 
 See [docs/HealthBot_Complete_Documentation.md](docs/HealthBot_Complete_Documentation.md) for full technical details.
 
@@ -345,7 +345,7 @@ python -m healthbot.evaluation.experiments
 | **nDCG@5** | 0.68 - 0.74 | Ranking quality score |
 | **Faithfulness** | 0.82 - 0.92 | Answer grounded in context |
 | **Relevancy** | 0.85 - 0.92 | Answer addresses question |
-| **Latency** | 280-360ms | With/without reranker (~40ms difference) |
+| **Latency** | 280-360ms | Reranker adds +2.1s on CPU (disabled by default) |
 
 *Results vary based on USE_RERANKER setting and LLM model. See [EVALUATION_GUIDE.md](docs/EVALUATION_GUIDE.md) for details.*
 
@@ -380,7 +380,7 @@ healthbot/
 │   ├── data/                        # PubMed loader, chunking
 │   ├── retrieval/                   # Embeddings, vector store, retriever, reranker
 │   └── evaluation/                  # RAGAS, metrics, test suite, citation eval
-├── tests/                           # 97 comprehensive unit tests
+├── tests/                           # 222 comprehensive unit tests
 │   ├── test_routing.py              # Query classification tests (29 tests)
 │   ├── test_citations.py            # Citation verification tests (23 tests)
 │   ├── test_retrieval.py            # Retrieval tests (18 tests)
@@ -425,7 +425,7 @@ healthbot/
 |-----------|---------|
 | **Medical Knowledge Base** | |
 | PubMed Articles | 716 articles |
-| Vector Embeddings | 2,578 chunks (384-dim) |
+| Vector Embeddings | 716 articles, chunked dynamically (384-dim) |
 | Conditions Covered | 10 common health conditions |
 | **LangGraph Workflow** | |
 | Total Nodes | 13 nodes with conditional routing |
@@ -443,7 +443,7 @@ healthbot/
 | Citation Verification | LLM-as-judge (SUPPORTED/PARTIALLY/NOT_SUPPORTED) |
 | **Evaluation Framework** | |
 | Test Cases | 50 medical questions with ground truth |
-| Unit Tests | 97 comprehensive tests (routing, citations, retrieval, safety, reranker) |
+| Unit Tests | 222 comprehensive tests (routing, citations, retrieval, safety, reranker, agent, calculator, PubMed, adversarial) |
 | RAGAS Metrics | Faithfulness, relevancy, recall, precision |
 | Observability | Per-node latency, token usage, confidence, query intent, conversation context |
 | **Deployment** | |
@@ -456,7 +456,7 @@ healthbot/
 ## 🔒 Medical Safety
 
 ### Emergency Detection
-Automatically detects 23 critical keywords:
+Automatically detects 31 emergency keywords:
 - Chest pain, difficulty breathing, stroke symptoms
 - Severe bleeding, unconscious, suicidal thoughts
 - Triggers immediate emergency response
@@ -503,7 +503,7 @@ visualize_graph("docs/workflow_graph.png")
 ## 📈 Evaluation Framework
 
 ### Test Suite Coverage
-- **Unit Tests**: 97 comprehensive tests across 6 test files (routing: 29, citations: 23, retrieval: 18, safety: 15, reranker: 12, embeddings: various)
+- **Unit Tests**: 222 comprehensive tests across 11 test files (adversarial: 42, calculator: 34, routing: 29, citations: 23, agent_tools: 21, retrieval: 15, reranker: 15, safety: 15, pubmed: 15, agent_graph: 11, integration: 2)
 - **Integration Tests**: 50 medical questions with ground truth answers
 - **Conditions**: 10 (diabetes, hypertension, asthma, heart disease, arthritis, depression, migraine, COPD, obesity, thyroid)
 - **Cases per Condition**: 5 carefully curated questions
