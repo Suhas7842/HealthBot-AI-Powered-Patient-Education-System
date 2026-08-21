@@ -49,8 +49,8 @@ def verify_agent_behavior():
             summary = result.get('summary', '')
             disclaimer_shown = result.get('disclaimer_shown', False)
 
-            print(f"\n✓ Tools called: {tools_called}")
-            print(f"✓ Disclaimer shown: {disclaimer_shown}")
+            print(f"\nTools called: {tools_called}")
+            print(f"Disclaimer shown: {disclaimer_shown}")
             print(f"\nSummary preview (first 200 chars):")
             print(f"{summary[:200]}...")
 
@@ -72,7 +72,7 @@ def verify_agent_behavior():
             })
 
             if not success:
-                print("\n⚠️ WARNING: Test did not meet success criteria")
+                print("\nWARNING: Test did not meet success criteria")
                 if not tools_called:
                     print("  - No tools called (empty list)")
                 if not summary:
@@ -81,7 +81,7 @@ def verify_agent_behavior():
                     print("  - Disclaimer not shown")
 
         except Exception as e:
-            print(f"\n❌ ERROR: {e}")
+            print(f"\nERROR: {e}")
             import traceback
             traceback.print_exc()
 
@@ -103,7 +103,7 @@ def verify_agent_behavior():
     print(f"\nTests passed: {success_count}/{total_count}")
 
     for result in results:
-        status = "✓ PASS" if result.get('success', False) else "❌ FAIL"
+        status = "PASS" if result.get('success', False) else "FAIL"
         print(f"\n{status}: {result['test']}")
         if result.get('tools_called'):
             print(f"  Tools: {result['tools_called']}")
@@ -117,11 +117,11 @@ def verify_agent_behavior():
     print(f"\nDetailed results saved to: verification_results.json")
 
     if success_count == total_count:
-        print("\n🎉 All verification tests passed!")
+        print("\nSUCCESS: All verification tests passed!")
         print("   Agent tool orchestration is working correctly with real LLM calls.")
         return True
     else:
-        print(f"\n⚠️ {total_count - success_count} test(s) failed.")
+        print(f"\nWARNING: {total_count - success_count} test(s) failed.")
         print("   Need to debug before proceeding to other issues.")
         return False
 
