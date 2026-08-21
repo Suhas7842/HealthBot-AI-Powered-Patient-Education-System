@@ -115,12 +115,11 @@ class TestAgentNode:
         mock_executor = Mock()
         mock_message = Mock()
         mock_message.content = "Response"
-        mock_message.additional_kwargs = {
-            "tool_calls": [
-                {"name": "medical_rag_search"},
-                {"name": "medical_calculator"},
-            ]
-        }
+        # Match real LangChain AIMessage structure
+        mock_message.tool_calls = [
+            {"name": "medical_rag_search"},
+            {"name": "medical_calculator"},
+        ]
         mock_executor.invoke.return_value = {
             "messages": [mock_message]
         }

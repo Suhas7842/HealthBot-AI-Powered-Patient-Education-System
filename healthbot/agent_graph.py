@@ -178,15 +178,14 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
     reasoning_steps = []
 
     # Parse intermediate steps if available
+    # LangChain stores tool calls in msg.tool_calls attribute, not additional_kwargs
     for msg in agent_messages:
-        if hasattr(msg, 'additional_kwargs'):
-            tool_calls = msg.additional_kwargs.get('tool_calls', [])
-            if tool_calls:
-                for tool_call in tool_calls:
-                    if isinstance(tool_call, dict):
-                        tool_name = tool_call.get('name', 'unknown')
-                        tools_called.append(tool_name)
-                        reasoning_steps.append(f"Called tool: {tool_name}")
+        if hasattr(msg, 'tool_calls') and msg.tool_calls:
+            for tool_call in msg.tool_calls:
+                if isinstance(tool_call, dict):
+                    tool_name = tool_call.get('name', 'unknown')
+                    tools_called.append(tool_name)
+                    reasoning_steps.append(f"Called tool: {tool_name}")
 
     # Extract final response
     summary = final_message.content if final_message else "No response generated"

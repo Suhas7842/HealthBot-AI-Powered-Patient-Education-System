@@ -111,7 +111,7 @@ def calculate_dosage(weight_kg: float, dose_per_kg: float) -> Dict[str, Any]:
         "total_dose_mg": round(total_dose, 1),
         "interpretation": f"For a {weight_kg}kg patient at {dose_per_kg}mg/kg: {total_dose:.1f}mg total dose",
         "calculation_method": "Total dose = weight(kg) × dose_per_kg(mg/kg)",
-        "disclaimer": "This is a calculation only. Always verify with healthcare provider.",
+        "disclaimer": "⚠️ NOT FOR CLINICAL USE. This is a calculation tool only, not medical advice. Always verify dosages with a licensed healthcare provider before administration.",
     }
 
 
@@ -182,7 +182,7 @@ def calculate_creatinine_clearance(
         "interpretation": interpretation,
         "calculation_method": "Cockcroft-Gault formula",
         "formula": "CrCl = ((140 - age) × weight) / (72 × serum_cr) × (0.85 if female)",
-        "disclaimer": "This is an estimate. Actual kidney function should be assessed by healthcare provider.",
+        "disclaimer": "⚠️ NOT FOR CLINICAL USE. This is an estimation tool only. Kidney function must be assessed by a healthcare provider for medical decisions.",
     }
 
 

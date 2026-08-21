@@ -77,10 +77,24 @@ class RetrievalExperiment:
 
     def run_hybrid_with_reranker(self, query: str) -> tuple[list[dict], float]:
         """Run hybrid retrieval with cross-encoder reranking."""
-        # Need to create new retriever with reranker
-        reranking_retriever = HybridRetriever(use_reranker=True)
         start = time.time()
-        results = reranking_retriever.retrieve(query, k=self.k)
+
+        # Temporarily enable reranker on shared retriever (avoid reloading model)
+        original_flag = self.retriever.use_reranker
+        original_reranker = self.retriever.reranker
+
+        # Lazily initialize reranker if not present (only once per experiment run)
+        if not self.retriever.reranker:
+            from healthbot.retrieval.reranker import CrossEncoderReranker
+            self.retriever.reranker = CrossEncoderReranker()
+
+        self.retriever.use_reranker = True
+        results = self.retriever.retrieve(query, k=self.k)
+
+        # Restore original state
+        self.retriever.use_reranker = original_flag
+        self.retriever.reranker = original_reranker
+
         latency = time.time() - start
         return results, latency
 
