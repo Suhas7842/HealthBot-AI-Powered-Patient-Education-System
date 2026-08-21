@@ -49,7 +49,10 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP: int = 50
 
     # Reranking Settings
-    USE_RERANKER: bool = True  # Enable cross-encoder reranking (adds ~40ms)
+    # Reranker provides +16% recall improvement (0.336→0.390) but adds ~2.1s latency on CPU
+    # Trade-off: Quality vs Speed. Enable if you have GPU acceleration or can tolerate latency.
+    # See Phase 3 experiments in README for measured results.
+    USE_RERANKER: bool = False  # Disabled by default due to CPU latency cost
     RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-12-v2"
     RERANKER_TOP_K_MULTIPLIER: int = 4  # Retrieve 4x candidates for reranking
 

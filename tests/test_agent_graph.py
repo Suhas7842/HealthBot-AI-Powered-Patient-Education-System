@@ -22,10 +22,7 @@ class TestSafetyCheckNode:
     @patch('healthbot.agent_graph.check_emergency')
     def test_safety_check_emergency_detected(self, mock_check):
         """Test safety check detects emergency."""
-        mock_check.return_value = {
-            "is_emergency": True,
-            "message": "Call 911 immediately"
-        }
+        mock_check.return_value = True
 
         state = {"topic": "I'm having chest pain"}
         result = safety_check_node(state)
@@ -36,10 +33,7 @@ class TestSafetyCheckNode:
     @patch('healthbot.agent_graph.check_emergency')
     def test_safety_check_no_emergency(self, mock_check):
         """Test safety check with normal query."""
-        mock_check.return_value = {
-            "is_emergency": False,
-            "message": ""
-        }
+        mock_check.return_value = False
 
         state = {"topic": "What is diabetes?"}
         result = safety_check_node(state)
@@ -153,10 +147,7 @@ class TestAgentWorkflow:
     def test_workflow_emergency_path(self, mock_tools, mock_llm, mock_agent, mock_check):
         """Test workflow handles emergency path."""
         # Mock emergency detection
-        mock_check.return_value = {
-            "is_emergency": True,
-            "message": "Call 911"
-        }
+        mock_check.return_value = True
 
         workflow = create_agent_workflow()
         result = workflow.invoke({
