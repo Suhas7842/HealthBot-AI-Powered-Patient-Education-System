@@ -1,100 +1,159 @@
 """
 Run Agent Evaluation - Phase 4 Empirical Validation
 
-Runs the agent on all 20 test cases and measures:
-- Tool selection accuracy
-- Multi-tool usage rate
-- Precision/Recall metrics
+Supports multiple execution modes:
+- LIVE: Run agent on all test cases (quota-aware, cache-first)
+- CACHED: Evaluate only cached results (0 LLM calls)
+- MOCK: Test evaluation logic with deterministic outputs (0 LLM calls)
 
-This provides empirical evidence for agent performance (like Phase 3 did for RAG).
+Configuration:
+- LIVE_BUDGET: Maximum number of live LLM calls (default: 20)
+- USE_CACHE: Whether to use persistent cache (default: True)
+
+This provides empirical evidence for agent performance while respecting free-tier constraints.
 """
 
 import sys
 import json
+import argparse
 from pathlib import Path
 from datetime import datetime
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from healthbot.agent_graph import run_agent_query
 from healthbot.evaluation.agent_eval import (
     get_test_cases,
     evaluate_agent_performance,
     print_evaluation_summary,
 )
+from healthbot.evaluation.agent_executor import (
+    batch_execute,
+    ExecutionResult,
+)
+from healthbot.evaluation.agent_cache import get_cache_stats, AGENT_EVAL_VERSION
+from healthbot.config import settings
 
 
-def run_evaluation():
-    """Run agent evaluation on all test cases."""
+def run_evaluation(
+    mode: str = "live",
+    live_budget: int = 20,
+    use_cache: bool = True,
+):
+    """
+    Run agent evaluation on all test cases.
+
+    Args:
+        mode: Execution mode ("live", "cached", "mock")
+        live_budget: Maximum number of live LLM calls (for "live" mode)
+        use_cache: Whether to use persistent cache (for "live" mode)
+    """
     print("\n" + "="*70)
     print("AGENT EVALUATION - Phase 4 Empirical Validation")
     print("="*70)
-    print(f"\nStarted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"\nMode: {mode.upper()}")
+    print(f"Agent Version: {AGENT_EVAL_VERSION}")
+    print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    # Get model identifier
+    if settings.LLM_PROVIDER == "gemini":
+        model = settings.GEMINI_MODEL
+    else:
+        model = settings.OPENAI_MODEL
+
+    print(f"Model: {model}")
+
+    # Show cache stats if available
+    if mode in ["live", "cached"]:
+        cache_stats = get_cache_stats()
+        print(f"\nCache: {cache_stats['successful_entries']} successful entries")
 
     test_cases = get_test_cases()
     print(f"\nTotal test cases: {len(test_cases)}")
-    print("\nRunning agent on each test case...")
-    print("This will take ~10-15 minutes (20 LLM calls)")
+
+    if mode == "live":
+        print(f"Live budget: {live_budget} LLM calls")
+        print(f"Use cache: {use_cache}")
+        print("\nEstimated time: 1-2 minutes (with cache hits)")
+    elif mode == "cached":
+        print("\nEvaluating cached results only (0 LLM calls)")
+    elif mode == "mock":
+        print("\nMock mode - testing evaluation logic (0 LLM calls)")
+
     print("-"*70)
 
-    # Run agent on each test case
-    results = []
-    for i, test_case in enumerate(test_cases, 1):
+    # Extract queries and expected tools
+    queries = [tc["query"] for tc in test_cases]
+    expected_tools_list = [tc["expected_tools"] for tc in test_cases]
+
+    # Execute based on mode
+    if mode == "mock":
+        # Mock mode: deterministic outputs
+        execution_results = batch_execute(
+            queries=queries,
+            model=model,
+            use_cache=False,
+            mock_mode=True,
+            expected_tools_list=expected_tools_list,
+        )
+    elif mode == "cached":
+        # Cached mode: only use cache, no live calls
+        execution_results = batch_execute(
+            queries=queries,
+            model=model,
+            use_cache=True,
+            live_budget=0,  # No live calls allowed
+        )
+    else:  # live
+        # Live mode: cache-first with budget
+        execution_results = batch_execute(
+            queries=queries,
+            model=model,
+            use_cache=use_cache,
+            live_budget=live_budget,
+        )
+
+    # Show progress
+    for i, (exec_result, test_case) in enumerate(zip(execution_results, test_cases), 1):
         query = test_case["query"]
-        expected_tools = test_case["expected_tools"]
         category = test_case["category"]
+        expected_tools = test_case["expected_tools"]
 
-        print(f"\n[{i}/{len(test_cases)}] {category}")
+        print(f"\n[{i}/{len(test_cases)}] {category} [{exec_result.status}]")
         print(f"Query: {query[:60]}..." if len(query) > 60 else f"Query: {query}")
-        print(f"Expected: {expected_tools}")
 
-        try:
-            # Run agent
-            result = run_agent_query(query)
-
-            # Extract tools called
-            tools_called = result.get("tools_called", [])
-
+        if exec_result.is_evaluated():
+            tools_called = exec_result.get_tools_called()
+            print(f"Expected: {expected_tools}")
             print(f"Called: {tools_called if tools_called else 'None'}")
+        elif exec_result.status == "NOT_RUN":
+            print(f"Skipped (budget exhausted)")
+        elif exec_result.status == "RATE_LIMITED":
+            print(f"Rate limited: {exec_result.error}")
+        elif exec_result.status == "ERROR":
+            print(f"Error: {exec_result.error}")
 
-            # Check if successful
-            if tools_called:
-                if set(tools_called) == set(expected_tools):
-                    print("[OK] Exact match")
-                elif any(t in expected_tools for t in tools_called):
-                    print("[~] Partial match")
-                else:
-                    print("[X] No match")
-            else:
-                print("[X] No tools called")
-
-            results.append({
-                "query": query,
-                "expected_tools": expected_tools,
-                "tools_called": tools_called,
-                "category": category,
-                "success": True,
-            })
-
-        except Exception as e:
-            print(f"[X] Error: {str(e)[:100]}")
-            results.append({
-                "query": query,
-                "expected_tools": expected_tools,
-                "tools_called": [],
-                "category": category,
-                "success": False,
-                "error": str(e),
-            })
+    # Convert ExecutionResults to evaluation format
+    results = []
+    for exec_result, test_case in zip(execution_results, test_cases):
+        results.append({
+            "query": test_case["query"],
+            "expected_tools": test_case["expected_tools"],
+            "tools_called": exec_result.get_tools_called(),
+            "category": test_case["category"],
+            "success": exec_result.is_evaluated(),
+        })
 
     print("\n" + "="*70)
     print("EVALUATION COMPLETE")
     print("="*70)
 
-    # Calculate metrics
+    # Calculate metrics (pass execution_results for status tracking)
     print("\nCalculating metrics...")
-    summary = evaluate_agent_performance(results)
+    summary = evaluate_agent_performance(results, execution_results=execution_results)
+    summary["mode"] = mode
+    summary["agent_version"] = AGENT_EVAL_VERSION
+    summary["model"] = model
 
     # Print summary
     print_evaluation_summary(summary)
@@ -149,8 +208,33 @@ def run_evaluation():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run agent evaluation")
+    parser.add_argument(
+        "--mode",
+        choices=["live", "cached", "mock"],
+        default="live",
+        help="Execution mode: live (cache-first), cached (only cache), mock (deterministic)",
+    )
+    parser.add_argument(
+        "--budget",
+        type=int,
+        default=20,
+        help="Maximum number of live LLM calls (live mode only)",
+    )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Disable cache (live mode only)",
+    )
+
+    args = parser.parse_args()
+
     try:
-        summary = run_evaluation()
+        summary = run_evaluation(
+            mode=args.mode,
+            live_budget=args.budget,
+            use_cache=not args.no_cache,
+        )
         sys.exit(0)
     except KeyboardInterrupt:
         print("\n\nEvaluation interrupted by user.")

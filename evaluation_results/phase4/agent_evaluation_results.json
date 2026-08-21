@@ -1,0 +1,477 @@
+{
+  "total_cases": 20,
+  "evaluated_count": 20,
+  "not_run_count": 0,
+  "rate_limited_count": 0,
+  "error_count": 0,
+  "cached_count": 0,
+  "live_count": 0,
+  "mock_count": 20,
+  "coverage": 1.0,
+  "exact_match_count": 20,
+  "exact_match_rate": 1.0,
+  "partial_match_count": 20,
+  "partial_match_rate": 1.0,
+  "avg_precision": 1.0,
+  "avg_recall": 1.0,
+  "avg_f1_score": 1.0,
+  "multi_tool_rate": 0.0,
+  "single_tool_accuracy": 1.0,
+  "evaluations": [
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 0,
+      "query": "What is BMI and what's mine if I'm 70kg and 1.75m?",
+      "expected_tools": {
+        "required": [
+          "medical_calculator"
+        ],
+        "optional": [
+          "medical_rag_search"
+        ],
+        "inappropriate": []
+      },
+      "actual_tools": [
+        "medical_calculator"
+      ],
+      "category": "multi_tool",
+      "reason": "Calculator required for BMI. RAG optional for explanation (agent could explain inline).",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 1,
+      "query": "Calculate my medication dosage: 70kg patient, 5mg/kg",
+      "expected_tools": [
+        "medical_calculator"
+      ],
+      "actual_tools": [
+        "medical_calculator"
+      ],
+      "category": "single_tool",
+      "reason": "Pure calculation, no medical context needed",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 2,
+      "query": "What causes Type 2 diabetes?",
+      "expected_tools": [
+        "medical_rag_search"
+      ],
+      "actual_tools": [
+        "medical_rag_search"
+      ],
+      "category": "single_tool",
+      "reason": "Common condition in local knowledge base",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 3,
+      "query": "Compare recent studies on diabetes treatment efficacy",
+      "expected_tools": [
+        "pubmed_api_search"
+      ],
+      "actual_tools": [
+        "pubmed_api_search"
+      ],
+      "category": "single_tool",
+      "reason": "Research comparison needs PubMed, not local KB",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 4,
+      "query": "What are the symptoms of hypertension?",
+      "expected_tools": [
+        "medical_rag_search"
+      ],
+      "actual_tools": [
+        "medical_rag_search"
+      ],
+      "category": "single_tool",
+      "reason": "Common condition, symptoms available in local KB",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 5,
+      "query": "Calculate creatinine clearance: 65 year old male, 70kg, serum cr 1.2",
+      "expected_tools": [
+        "medical_calculator"
+      ],
+      "actual_tools": [
+        "medical_calculator"
+      ],
+      "category": "single_tool",
+      "reason": "Kidney function calculation",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 6,
+      "query": "What's my BMI if I weigh 85kg and I'm 1.80m tall? Is that healthy?",
+      "expected_tools": {
+        "required": [
+          "medical_calculator"
+        ],
+        "optional": [
+          "medical_rag_search"
+        ],
+        "inappropriate": []
+      },
+      "actual_tools": [
+        "medical_calculator"
+      ],
+      "category": "multi_tool",
+      "reason": "Calculator required. 'Is that healthy?' could be answered with basic ranges (optional RAG).",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 7,
+      "query": "Recent COVID-19 treatment updates",
+      "expected_tools": {
+        "required": [
+          "web_search",
+          "pubmed_api_search"
+        ],
+        "optional": [
+          "medical_rag_search"
+        ],
+        "inappropriate": []
+      },
+      "actual_tools": [
+        "web_search",
+        "pubmed_api_search"
+      ],
+      "category": "single_tool",
+      "reason": "web_search for news OR pubmed_api_search for recent research both valid. Requires at least one.",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 8,
+      "query": "What are the risk factors for cardiovascular disease?",
+      "expected_tools": [
+        "medical_rag_search"
+      ],
+      "actual_tools": [
+        "medical_rag_search"
+      ],
+      "category": "single_tool",
+      "reason": "Medical education, available in local KB",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 9,
+      "query": "Latest research on cancer immunotherapy",
+      "expected_tools": [
+        "pubmed_api_search"
+      ],
+      "actual_tools": [
+        "pubmed_api_search"
+      ],
+      "category": "single_tool",
+      "reason": "Recent research, broad topic",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 10,
+      "query": "What is asthma and how is it treated?",
+      "expected_tools": [
+        "medical_rag_search"
+      ],
+      "actual_tools": [
+        "medical_rag_search"
+      ],
+      "category": "single_tool",
+      "reason": "Common condition with treatment info in local KB",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 11,
+      "query": "Calculate BMI for 60kg, 1.65m and explain what it means",
+      "expected_tools": {
+        "required": [
+          "medical_calculator"
+        ],
+        "optional": [
+          "medical_rag_search"
+        ],
+        "inappropriate": []
+      },
+      "actual_tools": [
+        "medical_calculator"
+      ],
+      "category": "multi_tool",
+      "reason": "Calculator required. 'Explain what it means' ambiguous - could be inline or RAG.",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 12,
+      "query": "Compare Type 1 vs Type 2 diabetes symptoms",
+      "expected_tools": [
+        "medical_rag_search"
+      ],
+      "actual_tools": [
+        "medical_rag_search"
+      ],
+      "category": "single_tool",
+      "reason": "Comparative medical question, both in local KB",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 13,
+      "query": "What's the normal BMI range?",
+      "expected_tools": [
+        "medical_rag_search"
+      ],
+      "actual_tools": [
+        "medical_rag_search"
+      ],
+      "category": "single_tool",
+      "reason": "Medical information, no calculation needed",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 14,
+      "query": "Recent meta-analysis on statins for cholesterol",
+      "expected_tools": [
+        "pubmed_api_search"
+      ],
+      "actual_tools": [
+        "pubmed_api_search"
+      ],
+      "category": "single_tool",
+      "reason": "Specific research query, needs PubMed",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 15,
+      "query": "What is COPD?",
+      "expected_tools": [
+        "medical_rag_search"
+      ],
+      "actual_tools": [
+        "medical_rag_search"
+      ],
+      "category": "single_tool",
+      "reason": "Common condition in local knowledge base",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 16,
+      "query": "Calculate medication dose: 50kg patient at 3mg/kg",
+      "expected_tools": [
+        "medical_calculator"
+      ],
+      "actual_tools": [
+        "medical_calculator"
+      ],
+      "category": "single_tool",
+      "reason": "Pure dosage calculation",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 17,
+      "query": "What are modifiable risk factors for heart disease?",
+      "expected_tools": [
+        "medical_rag_search"
+      ],
+      "actual_tools": [
+        "medical_rag_search"
+      ],
+      "category": "single_tool",
+      "reason": "Medical education, preventive care",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 18,
+      "query": "New WHO guidelines on obesity management",
+      "expected_tools": {
+        "required": [
+          "web_search",
+          "pubmed_api_search"
+        ],
+        "optional": [],
+        "inappropriate": []
+      },
+      "actual_tools": [
+        "web_search",
+        "pubmed_api_search"
+      ],
+      "category": "single_tool",
+      "reason": "web_search for official guidelines OR pubmed_api_search for research both valid.",
+      "status": "MOCK",
+      "evaluated": true
+    },
+    {
+      "exact_match": true,
+      "partial_match": true,
+      "precision": 1.0,
+      "recall": 1.0,
+      "score": 1.0,
+      "has_required_tool": true,
+      "used_inappropriate_tool": false,
+      "test_id": 19,
+      "query": "What's my kidney function if creatinine clearance is 45 ml/min?",
+      "expected_tools": [
+        "medical_rag_search"
+      ],
+      "actual_tools": [
+        "medical_rag_search"
+      ],
+      "category": "single_tool",
+      "reason": "Interpretation of lab value, no calculation",
+      "status": "MOCK",
+      "evaluated": true
+    }
+  ],
+  "mode": "mock",
+  "agent_version": "v1",
+  "model": "openai/gpt-oss-120b"
+}

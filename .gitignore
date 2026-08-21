@@ -64,6 +64,9 @@ deployment/.serverless/
 .coverage
 htmlcov/
 
+# Evaluation cache
+evaluation_cache/
+
 # Ruff
 .ruff_cache/
 

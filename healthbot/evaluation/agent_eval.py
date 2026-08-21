@@ -284,14 +284,23 @@ def evaluate_tool_selection(
 
 def evaluate_agent_performance(
     results: List[Dict[str, Any]],
-    save_path: Path | None = None
+    save_path: Path | None = None,
+    execution_results: List[Any] | None = None
 ) -> Dict[str, Any]:
     """
     Evaluate overall agent performance across test cases.
 
+    This function evaluates agent outputs OFFLINE - it does not call the LLM.
+    It can evaluate:
+    - Live execution results
+    - Cached results
+    - Mock results
+    - Mixed (some cached, some live, some not run)
+
     Args:
         results: List of agent execution results with tools_called
         save_path: Optional path to save results
+        execution_results: Optional list of ExecutionResult objects (for status tracking)
 
     Returns:
         Dictionary with evaluation metrics
@@ -301,12 +310,44 @@ def evaluate_agent_performance(
             f"Results count ({len(results)}) doesn't match test cases ({len(AGENT_TEST_CASES)})"
         )
 
+    # Track execution status
+    statuses = {}
+    if execution_results:
+        for i, exec_result in enumerate(execution_results):
+            statuses[i] = exec_result.status
+
     # Evaluate each test case
     evaluations = []
+    actually_evaluated = []  # Only cases with real results (not NOT_RUN/RATE_LIMITED/ERROR)
+
     for i, (test_case, result) in enumerate(zip(AGENT_TEST_CASES, results)):
         actual_tools = result.get("tools_called", [])
         expected_tools = test_case["expected_tools"]
+        status = statuses.get(i, "SUCCESS")
 
+        # Skip evaluation if not actually executed
+        if status in ["NOT_RUN", "RATE_LIMITED", "ERROR"]:
+            eval_result = {
+                "test_id": i,
+                "query": test_case["query"],
+                "expected_tools": expected_tools,
+                "actual_tools": actual_tools,
+                "category": test_case["category"],
+                "reason": test_case["reason"],
+                "status": status,
+                "exact_match": False,
+                "partial_match": False,
+                "precision": 0.0,
+                "recall": 0.0,
+                "score": 0.0,
+                "has_required_tool": False,
+                "used_inappropriate_tool": False,
+                "evaluated": False,
+            }
+            evaluations.append(eval_result)
+            continue
+
+        # Evaluate tool selection
         eval_result = evaluate_tool_selection(actual_tools, expected_tools)
         eval_result.update({
             "test_id": i,
@@ -315,41 +356,82 @@ def evaluate_agent_performance(
             "actual_tools": actual_tools,
             "category": test_case["category"],
             "reason": test_case["reason"],
+            "status": status,
+            "evaluated": True,
         })
         evaluations.append(eval_result)
+        actually_evaluated.append(eval_result)
 
-    # Aggregate metrics
+    # Aggregate metrics - ONLY over actually evaluated cases
     total_cases = len(evaluations)
-    exact_matches = sum(1 for e in evaluations if e["exact_match"])
-    partial_matches = sum(1 for e in evaluations if e["partial_match"])
+    evaluated_count = len(actually_evaluated)
 
-    avg_precision = sum(e["precision"] for e in evaluations) / total_cases
-    avg_recall = sum(e["recall"] for e in evaluations) / total_cases
-    avg_f1 = sum(e["score"] for e in evaluations) / total_cases
+    if evaluated_count == 0:
+        # No cases were actually evaluated
+        summary = {
+            "total_cases": total_cases,
+            "evaluated_count": 0,
+            "not_run_count": total_cases,
+            "coverage": 0.0,
+            "exact_match_count": 0,
+            "exact_match_rate": 0.0,
+            "partial_match_count": 0,
+            "partial_match_rate": 0.0,
+            "avg_precision": 0.0,
+            "avg_recall": 0.0,
+            "avg_f1_score": 0.0,
+            "multi_tool_rate": 0.0,
+            "single_tool_accuracy": 0.0,
+            "evaluations": evaluations,
+        }
+    else:
+        # Calculate metrics over evaluated cases only
+        exact_matches = sum(1 for e in actually_evaluated if e["exact_match"])
+        partial_matches = sum(1 for e in actually_evaluated if e["partial_match"])
 
-    # Multi-tool usage (how often agent uses multiple tools when beneficial)
-    multi_tool_cases = [e for e in evaluations if e["category"] == "multi_tool"]
-    multi_tool_used = sum(1 for e in multi_tool_cases if len(e["actual_tools"]) > 1)
-    multi_tool_rate = multi_tool_used / len(multi_tool_cases) if multi_tool_cases else 0.0
+        avg_precision = sum(e["precision"] for e in actually_evaluated) / evaluated_count
+        avg_recall = sum(e["recall"] for e in actually_evaluated) / evaluated_count
+        avg_f1 = sum(e["score"] for e in actually_evaluated) / evaluated_count
 
-    # Single-tool cases (should use exactly 1 tool)
-    single_tool_cases = [e for e in evaluations if e["category"] == "single_tool"]
-    single_tool_correct = sum(1 for e in single_tool_cases if e["exact_match"])
-    single_tool_accuracy = single_tool_correct / len(single_tool_cases) if single_tool_cases else 0.0
+        # Multi-tool usage (how often agent uses multiple tools when beneficial)
+        multi_tool_cases = [e for e in actually_evaluated if e["category"] == "multi_tool"]
+        multi_tool_used = sum(1 for e in multi_tool_cases if len(e["actual_tools"]) > 1)
+        multi_tool_rate = multi_tool_used / len(multi_tool_cases) if multi_tool_cases else 0.0
 
-    summary = {
-        "total_cases": total_cases,
-        "exact_match_count": exact_matches,
-        "exact_match_rate": exact_matches / total_cases,
-        "partial_match_count": partial_matches,
-        "partial_match_rate": partial_matches / total_cases,
-        "avg_precision": avg_precision,
-        "avg_recall": avg_recall,
-        "avg_f1_score": avg_f1,
-        "multi_tool_rate": multi_tool_rate,
-        "single_tool_accuracy": single_tool_accuracy,
-        "evaluations": evaluations,
-    }
+        # Single-tool cases (should use exactly 1 tool)
+        single_tool_cases = [e for e in actually_evaluated if e["category"] == "single_tool"]
+        single_tool_correct = sum(1 for e in single_tool_cases if e["exact_match"])
+        single_tool_accuracy = single_tool_correct / len(single_tool_cases) if single_tool_cases else 0.0
+
+        # Count execution statuses
+        not_run = sum(1 for e in evaluations if e.get("status") == "NOT_RUN")
+        rate_limited = sum(1 for e in evaluations if e.get("status") == "RATE_LIMITED")
+        errors = sum(1 for e in evaluations if e.get("status") == "ERROR")
+        cached = sum(1 for e in evaluations if e.get("status") == "CACHED")
+        live = sum(1 for e in evaluations if e.get("status") == "SUCCESS")
+        mock = sum(1 for e in evaluations if e.get("status") == "MOCK")
+
+        summary = {
+            "total_cases": total_cases,
+            "evaluated_count": evaluated_count,
+            "not_run_count": not_run,
+            "rate_limited_count": rate_limited,
+            "error_count": errors,
+            "cached_count": cached,
+            "live_count": live,
+            "mock_count": mock,
+            "coverage": evaluated_count / total_cases,
+            "exact_match_count": exact_matches,
+            "exact_match_rate": exact_matches / evaluated_count,
+            "partial_match_count": partial_matches,
+            "partial_match_rate": partial_matches / evaluated_count,
+            "avg_precision": avg_precision,
+            "avg_recall": avg_recall,
+            "avg_f1_score": avg_f1,
+            "multi_tool_rate": multi_tool_rate,
+            "single_tool_accuracy": single_tool_accuracy,
+            "evaluations": evaluations,
+        }
 
     # Save results if path provided
     if save_path:
@@ -372,28 +454,55 @@ def print_evaluation_summary(summary: Dict[str, Any]):
     print("="*70)
 
     print(f"\nTotal Test Cases: {summary['total_cases']}")
-    print(f"\nTool Selection Accuracy:")
-    print(f"  Exact Match: {summary['exact_match_count']}/{summary['total_cases']} ({summary['exact_match_rate']:.1%})")
-    print(f"  Partial Match: {summary['partial_match_count']}/{summary['total_cases']} ({summary['partial_match_rate']:.1%})")
 
-    print(f"\nMetrics:")
-    print(f"  Precision: {summary['avg_precision']:.3f}")
-    print(f"  Recall: {summary['avg_recall']:.3f}")
-    print(f"  F1 Score: {summary['avg_f1_score']:.3f}")
+    # Show execution coverage
+    evaluated = summary.get('evaluated_count', summary['total_cases'])
+    coverage = summary.get('coverage', 1.0)
 
-    print(f"\nTool Usage Patterns:")
-    print(f"  Multi-Tool Usage Rate: {summary['multi_tool_rate']:.1%}")
-    print(f"  Single-Tool Accuracy: {summary['single_tool_accuracy']:.1%}")
+    print(f"\nExecution Coverage: {evaluated}/{summary['total_cases']} ({coverage:.1%})")
 
-    # Show failed cases
-    failures = [e for e in summary['evaluations'] if not e['partial_match']]
-    if failures:
-        print(f"\nFailed Cases ({len(failures)}):")
-        for fail in failures:
-            print(f"  - Query: {fail['query']}")
-            print(f"    Expected: {fail['expected_tools']}")
-            print(f"    Actual: {fail['actual_tools']}")
-            print()
+    # Show execution status breakdown
+    if 'cached_count' in summary or 'live_count' in summary:
+        print(f"\nExecution Status:")
+        if summary.get('live_count', 0) > 0:
+            print(f"  Live LLM calls: {summary['live_count']}")
+        if summary.get('cached_count', 0) > 0:
+            print(f"  Cached results: {summary['cached_count']}")
+        if summary.get('mock_count', 0) > 0:
+            print(f"  Mock results: {summary['mock_count']}")
+        if summary.get('not_run_count', 0) > 0:
+            print(f"  Not run (budget): {summary['not_run_count']}")
+        if summary.get('rate_limited_count', 0) > 0:
+            print(f"  Rate limited: {summary['rate_limited_count']}")
+        if summary.get('error_count', 0) > 0:
+            print(f"  Errors: {summary['error_count']}")
+
+    # Only show metrics if we have evaluated cases
+    if evaluated > 0:
+        print(f"\nTool Selection Accuracy (over {evaluated} evaluated):")
+        print(f"  Exact Match: {summary['exact_match_count']}/{evaluated} ({summary['exact_match_rate']:.1%})")
+        print(f"  Partial Match: {summary['partial_match_count']}/{evaluated} ({summary['partial_match_rate']:.1%})")
+
+        print(f"\nMetrics:")
+        print(f"  Precision: {summary['avg_precision']:.3f}")
+        print(f"  Recall: {summary['avg_recall']:.3f}")
+        print(f"  F1 Score: {summary['avg_f1_score']:.3f}")
+
+        print(f"\nTool Usage Patterns:")
+        print(f"  Multi-Tool Usage Rate: {summary['multi_tool_rate']:.1%}")
+        print(f"  Single-Tool Accuracy: {summary['single_tool_accuracy']:.1%}")
+
+        # Show failed cases (only from evaluated)
+        failures = [e for e in summary['evaluations'] if e.get('evaluated', True) and not e['partial_match']]
+        if failures:
+            print(f"\nFailed Cases ({len(failures)}):")
+            for fail in failures:
+                print(f"  - Query: {fail['query']}")
+                print(f"    Expected: {fail['expected_tools']}")
+                print(f"    Actual: {fail['actual_tools']}")
+                print()
+    else:
+        print("\nNo cases were evaluated (all NOT_RUN/RATE_LIMITED/ERROR)")
 
     print("="*70)
 
