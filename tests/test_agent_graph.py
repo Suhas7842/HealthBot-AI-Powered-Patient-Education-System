@@ -85,7 +85,7 @@ class TestAgentNode:
         mock_executor = Mock()
         mock_message = Mock()
         mock_message.content = "Test agent response"
-        mock_message.additional_kwargs = {}
+        mock_message.tool_calls = []  # No tools called in this test
         mock_executor.invoke.return_value = {
             "messages": [mock_message]
         }
