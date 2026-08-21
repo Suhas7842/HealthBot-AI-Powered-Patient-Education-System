@@ -15,8 +15,12 @@ from pathlib import Path
 AGENT_TEST_CASES = [
     {
         "query": "What is BMI and what's mine if I'm 70kg and 1.75m?",
-        "expected_tools": ["medical_calculator", "medical_rag_search"],
-        "reason": "Needs calculation + explanation",
+        "expected_tools": {
+            "required": ["medical_calculator"],
+            "optional": ["medical_rag_search"],
+            "inappropriate": []
+        },
+        "reason": "Calculator required for BMI. RAG optional for explanation (agent could explain inline).",
         "category": "multi_tool",
     },
     {
@@ -51,14 +55,22 @@ AGENT_TEST_CASES = [
     },
     {
         "query": "What's my BMI if I weigh 85kg and I'm 1.80m tall? Is that healthy?",
-        "expected_tools": ["medical_calculator", "medical_rag_search"],
-        "reason": "Calculation + health interpretation",
+        "expected_tools": {
+            "required": ["medical_calculator"],
+            "optional": ["medical_rag_search"],
+            "inappropriate": []
+        },
+        "reason": "Calculator required. 'Is that healthy?' could be answered with basic ranges (optional RAG).",
         "category": "multi_tool",
     },
     {
         "query": "Recent COVID-19 treatment updates",
-        "expected_tools": ["web_search"],
-        "reason": "Current news, time-sensitive",
+        "expected_tools": {
+            "required": ["web_search", "pubmed_api_search"],  # Either is valid
+            "optional": ["medical_rag_search"],  # Background info optional
+            "inappropriate": []
+        },
+        "reason": "web_search for news OR pubmed_api_search for recent research both valid. Requires at least one.",
         "category": "single_tool",
     },
     {
@@ -81,8 +93,12 @@ AGENT_TEST_CASES = [
     },
     {
         "query": "Calculate BMI for 60kg, 1.65m and explain what it means",
-        "expected_tools": ["medical_calculator", "medical_rag_search"],
-        "reason": "Calculation + medical interpretation",
+        "expected_tools": {
+            "required": ["medical_calculator"],
+            "optional": ["medical_rag_search"],
+            "inappropriate": []
+        },
+        "reason": "Calculator required. 'Explain what it means' ambiguous - could be inline or RAG.",
         "category": "multi_tool",
     },
     {
@@ -123,8 +139,12 @@ AGENT_TEST_CASES = [
     },
     {
         "query": "New WHO guidelines on obesity management",
-        "expected_tools": ["web_search"],
-        "reason": "Recent guidelines, current information",
+        "expected_tools": {
+            "required": ["web_search", "pubmed_api_search"],  # Either is valid
+            "optional": [],
+            "inappropriate": []
+        },
+        "reason": "web_search for official guidelines OR pubmed_api_search for research both valid.",
         "category": "single_tool",
     },
     {
@@ -136,21 +156,33 @@ AGENT_TEST_CASES = [
 ]
 
 
-def evaluate_tool_selection(actual_tools: List[str], expected_tools: List[str]) -> Dict[str, Any]:
+def evaluate_tool_selection(
+    actual_tools: List[str],
+    expected_tools: List[str] | Dict[str, List[str]]
+) -> Dict[str, Any]:
     """
     Evaluate if agent selected appropriate tools.
 
+    Supports flexible expectations to avoid penalizing valid alternative tool combinations.
+
     Args:
         actual_tools: Tools actually called by agent
-        expected_tools: Tools expected for this query
+        expected_tools: Either:
+            - List[str]: Simple list (backward compatible)
+            - Dict with keys:
+                - 'required': Must use at least one
+                - 'optional': May use (no penalty if missing)
+                - 'inappropriate': Should NOT use
 
     Returns:
         Dictionary with:
             - exact_match: bool (perfect tool selection)
             - partial_match: bool (some correct tools)
-            - precision: float (% of actual tools that were expected)
-            - recall: float (% of expected tools that were called)
+            - precision: float (% of actual tools that were appropriate)
+            - recall: float (% of required tools that were called)
             - score: float (F1 score)
+            - has_required_tool: bool (used at least one required tool)
+            - used_inappropriate_tool: bool (used tool marked inappropriate)
     """
     if not actual_tools:
         return {
@@ -159,23 +191,79 @@ def evaluate_tool_selection(actual_tools: List[str], expected_tools: List[str]) 
             "precision": 0.0,
             "recall": 0.0,
             "score": 0.0,
+            "has_required_tool": False,
+            "used_inappropriate_tool": False,
         }
 
     actual_set = set(actual_tools)
-    expected_set = set(expected_tools)
 
-    # Exact match
-    exact_match = actual_set == expected_set
+    # Handle backward compatibility (simple list format)
+    if isinstance(expected_tools, list):
+        expected_set = set(expected_tools)
 
-    # Partial match (at least one correct tool)
-    correct_tools = actual_set & expected_set
+        # Exact match
+        exact_match = actual_set == expected_set
+
+        # Partial match (at least one correct tool)
+        correct_tools = actual_set & expected_set
+        partial_match = len(correct_tools) > 0
+
+        # Precision: % of actual tools that were expected
+        precision = len(correct_tools) / len(actual_set) if actual_set else 0.0
+
+        # Recall: % of expected tools that were called
+        recall = len(correct_tools) / len(expected_set) if expected_set else 0.0
+
+        # F1 score
+        if precision + recall > 0:
+            f1_score = 2 * (precision * recall) / (precision + recall)
+        else:
+            f1_score = 0.0
+
+        return {
+            "exact_match": exact_match,
+            "partial_match": partial_match,
+            "precision": precision,
+            "recall": recall,
+            "score": f1_score,
+            "has_required_tool": partial_match,  # Any match counts as "required"
+            "used_inappropriate_tool": False,  # No concept in simple format
+        }
+
+    # Handle flexible format (dict with required/optional/inappropriate)
+    required = set(expected_tools.get('required', []))
+    optional = set(expected_tools.get('optional', []))
+    inappropriate = set(expected_tools.get('inappropriate', []))
+
+    # Check if agent used at least one required tool
+    has_required = len(actual_set & required) > 0 if required else True
+
+    # Check if agent used any inappropriate tools
+    used_inappropriate = len(actual_set & inappropriate) > 0
+
+    # Appropriate tools = required + optional
+    appropriate = required | optional
+    correct_tools = actual_set & appropriate
+
+    # Exact match: uses required tools and optionally some optional tools, no inappropriate
+    exact_match = (
+        has_required and
+        not used_inappropriate and
+        actual_set <= appropriate  # All actual tools are in appropriate set
+    )
+
+    # Partial match: at least one correct tool
     partial_match = len(correct_tools) > 0
 
-    # Precision: % of actual tools that were expected
-    precision = len(correct_tools) / len(actual_set) if actual_set else 0.0
+    # Precision: % of actual tools that were appropriate (not inappropriate)
+    # Penalize inappropriate tools heavily
+    inappropriate_count = len(actual_set & inappropriate)
+    precision = (len(correct_tools) - inappropriate_count) / len(actual_set) if actual_set else 0.0
+    precision = max(0.0, precision)  # Don't go negative
 
-    # Recall: % of expected tools that were called
-    recall = len(correct_tools) / len(expected_set) if expected_set else 0.0
+    # Recall: % of required tools that were called
+    # Optional tools don't affect recall (no penalty for missing)
+    recall = len(actual_set & required) / len(required) if required else 1.0
 
     # F1 score
     if precision + recall > 0:
@@ -189,6 +277,8 @@ def evaluate_tool_selection(actual_tools: List[str], expected_tools: List[str]) 
         "precision": precision,
         "recall": recall,
         "score": f1_score,
+        "has_required_tool": has_required,
+        "used_inappropriate_tool": used_inappropriate,
     }
 
 

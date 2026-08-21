@@ -1,6 +1,8 @@
 """
-State definition for HealthBot LangGraph workflow.
-Tracks conversation state, RAG context, and execution metadata.
+State definition for HealthBot GenAI agent workflow.
+
+Tracks only actively used state fields for agent-based workflow (Phase 4).
+Unused fields from Phase 3 pipeline removed to avoid premature abstractions.
 """
 
 from typing import TypedDict
@@ -10,56 +12,29 @@ from langchain_core.messages import BaseMessage
 
 class PatientState(TypedDict):
     """
-    Complete state for HealthBot conversation workflow.
+    State for HealthBot agent workflow.
 
-    Tracks user interaction, retrieval context, LLM outputs, and observability metrics.
+    Includes only fields that are actively populated and used by the agent system.
+    Fields removed: RAG pipeline-specific, unused observability, conversation memory,
+    educational features (quiz), and speculative agent planning fields.
     """
 
-    # Core conversation state
-    messages: list[BaseMessage]
-    topic: str
+    # Core input
+    topic: str  # User's query
     patient_level: str  # "beginner", "intermediate", "advanced"
 
-    # Content state
-    summary: str | None
-    quiz: str | None
-    quiz_answer: str | None
-    grade: str | None
+    # Agent conversation
+    messages: list[BaseMessage]  # LangChain message history
 
-    # RAG retrieval tracking
-    retrieved_docs: list[dict]  # List of {title, abstract, source, pmid, score}
-    retrieval_scores: list[float]  # Relevance scores for retrieved docs
-    rag_context: str  # Formatted context string for LLM
+    # Output
+    summary: str | None  # Agent's final response
 
-    # Observability and metrics
-    confidence_score: float  # LLM confidence (0-1)
-    tool_calls: int  # Number of tool invocations
-    node_latencies: dict[str, float]  # Per-node execution time
-    token_usage: dict[str, int]  # {"prompt_tokens": X, "completion_tokens": Y}
+    # Safety
+    emergency_detected: bool  # Whether emergency keywords detected
+    disclaimer_shown: bool  # Whether medical disclaimer was shown
 
-    # Safety tracking
-    emergency_detected: bool
-    disclaimer_shown: bool
-
-    # Reranking tracking
-    reranker_used: bool  # Whether reranking was applied
-    rerank_latency_ms: float | None  # Reranking latency for observability
-
-    # Query classification
-    query_intent: str | None  # "informational", "diagnostic", "treatment", "preventive"
-    query_complexity: str | None  # "simple", "moderate", "complex"
-
-    # Conversation context
-    previous_topic: str | None  # Last discussed topic
-    conversation_turns: int  # Number of turns in current conversation
-    last_summary: str | None  # Summary from previous turn for context
-    is_follow_up: bool  # Whether current query is a follow-up
-
-    # Agent-specific tracking (Phase 4)
-    agent_plan: str | None  # Agent's reasoning/plan for tool selection
-    tools_called: list[str]  # List of tools agent called (for observability)
+    # Agent tool orchestration tracking
+    tools_called: list[str]  # Names of tools agent called
     tool_results: list[dict]  # Results from each tool call
-    agent_synthesis: str | None  # Agent's synthesized response
-    reasoning_steps: list[str]  # Agent's step-by-step reasoning
-    multi_step_research: bool  # Flag for complex research tasks
-    tool_selection_rationale: str | None  # Why agent chose specific tools
+    tool_call_trace: list[str]  # Trace of which tools were called (not internal reasoning)
+    agent_synthesis: str | None  # Agent's synthesized answer

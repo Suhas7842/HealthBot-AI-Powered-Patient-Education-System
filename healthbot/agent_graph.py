@@ -175,7 +175,7 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
     # Track tools called (for observability)
     tools_called = []
     tool_results = []
-    reasoning_steps = []
+    tool_call_trace = []
 
     # Parse intermediate steps if available
     # LangChain stores tool calls in msg.tool_calls attribute, not additional_kwargs
@@ -185,7 +185,7 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
                 if isinstance(tool_call, dict):
                     tool_name = tool_call.get('name', 'unknown')
                     tools_called.append(tool_name)
-                    reasoning_steps.append(f"Called tool: {tool_name}")
+                    tool_call_trace.append(f"Called tool: {tool_name}")
 
     # Extract final response
     summary = final_message.content if final_message else "No response generated"
@@ -199,7 +199,7 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
         "messages": agent_messages,
         "tools_called": tools_called,
         "tool_results": tool_results,
-        "reasoning_steps": reasoning_steps,
+        "tool_call_trace": tool_call_trace,
         "agent_synthesis": summary,
         "disclaimer_shown": True,
     }
@@ -225,37 +225,21 @@ def run_agent_query(query: str, patient_level: str = "beginner") -> Dict[str, An
         >>> print(result["summary"])
     """
     initial_state = {
+        # Core input
         "topic": query,
         "patient_level": patient_level,
+        # Agent conversation
         "messages": [],
-        "retrieved_docs": [],
-        "retrieval_scores": [],
-        "rag_context": "",
-        "confidence_score": 0.0,
-        "tool_calls": 0,
-        "node_latencies": {},
-        "token_usage": {},
+        # Output
+        "summary": None,
+        # Safety
         "emergency_detected": False,
         "disclaimer_shown": False,
-        "reranker_used": False,
-        "rerank_latency_ms": None,
-        "query_intent": None,
-        "query_complexity": None,
-        "previous_topic": None,
-        "conversation_turns": 0,
-        "last_summary": None,
-        "is_follow_up": False,
-        "agent_plan": None,
+        # Agent tool orchestration
         "tools_called": [],
         "tool_results": [],
+        "tool_call_trace": [],
         "agent_synthesis": None,
-        "reasoning_steps": [],
-        "multi_step_research": False,
-        "tool_selection_rationale": None,
-        "summary": None,
-        "quiz": None,
-        "quiz_answer": None,
-        "grade": None,
     }
 
     # Run through agent workflow

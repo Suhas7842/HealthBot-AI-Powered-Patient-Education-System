@@ -73,43 +73,48 @@ def medical_calculator(
     sex: Literal["male", "female"] = None,
 ) -> Dict[str, Any]:
     """
-    Perform medical calculations (BMI, dosage, kidney function).
+    Medical calculation helper for arithmetic operations.
 
-    Use this tool for:
-    - BMI calculations
-    - Medication dosage calculations
-    - Kidney function assessment (creatinine clearance)
+    ⚠️ IMPORTANT: This is an ARITHMETIC HELPER ONLY, not medical advice.
+    - Only use when user explicitly provides calculation parameters
+    - Never suggest medications or dosages proactively
+    - Always include disclaimer in your response
 
-    Calculation types:
+    Available calculations:
 
     1. BMI (Body Mass Index):
        - Required: weight_kg, height_m
        - Returns: bmi, category (underweight/normal/overweight/obese)
+       - Example: User asks "What's my BMI if I'm 70kg and 1.75m?"
 
-    2. Dosage (Medication):
+    2. Dosage (Medication arithmetic):
        - Required: weight_kg, dose_per_kg
-       - Returns: total_dose_mg
+       - Returns: total_dose_mg with calculation (weight × dose_per_kg)
+       - ⚠️ Only use when user already has prescription parameters
+       - Example: User says "Calculate dose for 70kg patient at 5mg/kg"
 
-    3. Creatinine Clearance (Kidney function):
+    3. Creatinine Clearance (Kidney function estimate):
        - Required: age, weight_kg, serum_creatinine_mg_dl, sex
        - Returns: crcl_ml_min, interpretation
+       - Example: User provides lab values for CrCl estimation
+
+    DO NOT use this tool to:
+    - Recommend what medication to take
+    - Suggest appropriate dosages or prescriptions
+    - Diagnose medical conditions
+    - Prescribe treatments
 
     Args:
         calculation_type: Type of calculation ("bmi", "dosage", "creatinine_clearance")
         weight_kg: Patient weight in kilograms
-        height_m: Patient height in meters
-        dose_per_kg: Medication dose per kilogram
-        age: Patient age in years
-        serum_creatinine_mg_dl: Serum creatinine in mg/dL
-        sex: Patient sex ("male" or "female")
+        height_m: Patient height in meters (for BMI)
+        dose_per_kg: Medication dose per kilogram (for dosage - user must provide)
+        age: Patient age in years (for CrCl)
+        serum_creatinine_mg_dl: Serum creatinine in mg/dL (for CrCl)
+        sex: Patient sex ("male" or "female") (for CrCl)
 
     Returns:
-        Calculation results with interpretation
-
-    Example:
-        Query: "What's my BMI if I'm 70kg and 1.75m tall?"
-        Call: medical_calculator("bmi", weight_kg=70, height_m=1.75)
-        Returns: {"bmi": 22.9, "category": "normal", ...}
+        Calculation results with interpretation and safety disclaimer.
     """
     # Build params dict from provided arguments
     params = {}
