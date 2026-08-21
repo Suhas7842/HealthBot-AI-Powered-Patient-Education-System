@@ -35,6 +35,17 @@ Model: gemini-3.7-flash
 **Script Used:** Simple test query (`run_agent_query('What is diabetes?')`)  
 **Retries:** Multiple automatic retries by SDK (503 high demand, then 429 quota exceeded)
 
+**Attempted Workaround - Groq API (2026-08-22 00:21-00:26):**
+Attempted to switch to Groq API (30 req/min limit, much better than Gemini's 20/day) to complete evaluation.
+
+**Groq Models Tested:**
+1. `llama3-70b-8192` → 400 Bad Request: "model decommissioned"
+2. `llama-3.1-70b-versatile` → 400 Bad Request: "model decommissioned"
+3. `llama-3.1-8b-instant` → 404 Not Found: "model does not exist"
+4. `mixtral-8x7b-32768` → 400 Bad Request (model decommissioned)
+
+**Result:** All tested Groq models deprecated/unavailable. Reverted to Gemini (quota resets daily).
+
 ---
 
 ## What This Means
