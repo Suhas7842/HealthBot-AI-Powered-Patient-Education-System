@@ -6,7 +6,7 @@ This implements a ReAct (Reason + Act) agent using LangGraph.
 KEY ARCHITECTURE:
 - LLM agent with tool calling capability
 - Dynamic tool selection (LLM decides which tools to call)
-- Multi-step reasoning and research
+- Multi-tool coordination and orchestration
 - Agent orchestrates YOUR custom tools (not generating from training data)
 
 This is kept separate from graph.py (Phase 1-3 pipeline) to:
@@ -103,7 +103,7 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
 
     This is where the LLM agent:
     1. Receives user query
-    2. Reasons about which tools to use
+    2. Selects appropriate tools based on query analysis
     3. Calls tools (YOUR custom tools)
     4. Synthesizes results
     5. Returns cited response
@@ -162,8 +162,8 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
 
     # Invoke agent
     # Agent will automatically:
-    # 1. Reason about task
-    # 2. Decide which tools to call
+    # 1. Analyze query
+    # 2. Select which tools to call
     # 3. Call tools (can be multiple, sequential)
     # 4. Synthesize results
     result = agent_executor.invoke(agent_input)

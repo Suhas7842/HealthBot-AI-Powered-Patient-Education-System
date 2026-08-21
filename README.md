@@ -5,7 +5,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-teal.svg)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A modular, extensible **GenAI Orchestration System** for medical education, powered by LangGraph, Pinecone, and Google Gemini. Features **LLM agent with tool calling**, enabling dynamic routing between custom tools (hybrid retriever, medical calculator, PubMed API, web search). The agent reasons about queries and orchestrates multi-tool research, demonstrating true GenAI engineering beyond single-purpose RAG.
+A modular, extensible **GenAI Orchestration System** for medical education, powered by LangGraph, Pinecone, and Google Gemini. Features **LLM agent with tool calling**, enabling dynamic routing between custom tools (hybrid retriever, medical calculator, PubMed API, web search). The agent selects and orchestrates tools based on query analysis, demonstrating true GenAI engineering beyond single-purpose RAG.
 
 ---
 
@@ -17,7 +17,7 @@ A modular, extensible **GenAI Orchestration System** for medical education, powe
 - **💬 Multi-Turn Conversation** - Context-aware follow-up detection and query rewriting for natural dialogue flows
 - **📝 Citation Verification** - Claim-level source attribution with LLM-as-judge verification for medical explainability
 - **📚 Real Medical Data** - 716 PubMed articles (chunked at runtime) across 20 medical conditions
-- **🤖 LangGraph Orchestration** - 13-node stateful workflow with conditional routing
+- **🤖 LangGraph Orchestration** - Dual architectures: 13-node RAG pipeline (Phase 1-3) + ReAct agent with safety routing (Phase 4)
 - **✅ Structured Outputs** - Type-safe Pydantic models (no string parsing)
 - **🛡️ Medical Safety** - Emergency detection with 31 emergency keywords (see `healthbot/safety.py`)
 - **📊 Comprehensive Evaluation** - RAGAS framework integrated + 50-case test suite + 222 unit tests (including 42 adversarial security tests)
@@ -85,7 +85,7 @@ HealthBot now features **LLM agent with dynamic tool selection** - a ReAct (Reas
 4. **Web Search** - Tavily integration for current health news
 
 **🎯 Key Differentiators:**
-- **LLM decides tools** - Agent reasons about which tools to call (not hardcoded if/else)
+- **LLM decides tools** - Agent selects tools based on query analysis (not hardcoded if/else)
 - **Multi-tool capability** - Agent can call multiple tools per query (e.g., calculate BMI + explain health implications)
 - **YOUR infrastructure** - Tools are YOUR engineering (not ChatGPT wrapper)
 - **Tool engineering showcase** - Medical calculator proves it's not "just RAG with extra steps"
@@ -94,12 +94,9 @@ HealthBot now features **LLM agent with dynamic tool selection** - a ReAct (Reas
 ```
 User: "What's my BMI if I'm 70kg and 1.75m tall, and is that healthy?"
 
-Agent Tool Selection:
-  Thought: Need to calculate BMI AND explain health implications
-  Plan: 
-    1. Use medical_calculator for BMI calculation
-    2. Use medical_rag_search for health context
-  Tools Called: [medical_calculator, medical_rag_search]
+Agent Tool Calls:
+  1. medical_calculator(weight=70, height=1.75, calculation="BMI")
+  2. medical_rag_search(query="BMI normal range health implications")
 
 Result: "Your BMI is 22.9, which falls in the normal range (18.5-24.9). 
          Medical evidence shows normal BMI is associated with lower risk 
@@ -109,26 +106,26 @@ Result: "Your BMI is 22.9, which falls in the normal range (18.5-24.9).
 **📊 Agent Evaluation:**
 
 **Infrastructure Validation (Completed):**
-- **Unit Tests**: 80 Phase 4 tests passing (calculator: 34, PubMed: 14, tools: 21, graph: 11)
-- **Total Test Suite**: 132 tests (80 Phase 4 + 52 Phase 1-3) - 100% passing
+- **Unit Tests**: 222 comprehensive tests passing (includes calculator: 34, PubMed: 15, agent tools: 21, agent graph: 11, adversarial: 42, and more)
 - **Architecture Proven**: Agent successfully orchestrates tools, handles multi-tool coordination, and manages tool failures
+- **Test Coverage**: Infrastructure correctness validated (agent CAN call tools correctly)
 
-**Empirical Agent Evaluation (Infrastructure Fixed - v3.1.0):**
-- **Evaluation Framework**: 20 diverse test cases designed ([agent_eval.py](healthbot/evaluation/agent_eval.py))
-- **Test Coverage**: Single-tool, multi-tool, and tool-diversity scenarios
-- **Evaluation Script**: Automated runner complete ([run_agent_evaluation.py](run_agent_evaluation.py))
-- **Bug Fix (v3.1.0)**: Fixed P0 tool-call tracking bug (was checking wrong LangChain message attribute, causing 0% detection)
-- **Integration Tests**: 2 end-to-end workflow tests now passing, validating tool coordination
-- **Status**: Framework ready, evaluation infrastructure validated via 222 unit tests
-- **API Quota**: Gemini free tier (20 req/day) currently exhausted - evaluation pending quota reset or paid tier
-- **Verification Script**: `verify_agent_behavior.py` ready to run (4 targeted queries)
-- **Full Evaluation**: `run_agent_evaluation.py` (20 test cases with precision/recall/F1 metrics)
+**Empirical Agent Evaluation (Infrastructure Ready - Pending Live LLM Execution):**
+- **Evaluation Framework**: 20 diverse test cases with structured expected tool sets ([agent_eval.py](healthbot/evaluation/agent_eval.py))
+- **Test Coverage**: Single-tool (diabetes query), multi-tool (BMI + health), and tool-diversity scenarios
+- **Infrastructure Status**: ✅ Framework complete, ✅ Bug fixed (v3.1.0), ✅ Scripts ready
+- **Bug Fix (v3.1.0)**: Fixed P0 tool-call tracking bug (was checking wrong message attribute)
+- **Current Limitation**: Gemini API quota exhausted (20 req/day limit), Groq models decommissioned (Aug 2026)
+- **Next Step**: Run `verify_agent_behavior.py` (4 queries) then `run_agent_evaluation.py` (20 cases) when API available
+- **Verification Scripts Ready**:
+  - `verify_agent_behavior.py` - 4 targeted queries (calculator-only, RAG-only, multi-tool, research)
+  - `run_agent_evaluation.py` - Full 20-case evaluation with precision/recall/F1 metrics
 
-**Why This Matters:**
-- Unit tests validate infrastructure correctness (agent CAN call tools)
-- Integration tests prove end-to-end workflow (query → tool → response)
-- Full empirical evaluation measures behavioral quality (agent CHOOSES correct tools)
-- This demonstrates realistic GenAI engineering: fixing evaluation infrastructure before claiming results
+**What's Validated vs. Pending:**
+- ✅ **Infrastructure validated**: 222 unit tests confirm agent CAN call tools correctly
+- ✅ **Integration validated**: End-to-end workflow tests prove tool coordination works
+- ⏳ **Behavioral validation pending**: Empirical tool selection accuracy requires live LLM execution
+- **This demonstrates realistic GenAI engineering**: Fix evaluation bugs first, then measure with real API calls
 
 **🏗️ Architecture Comparison:**
 
@@ -428,7 +425,7 @@ healthbot/
 | **Medical Knowledge Base** | |
 | PubMed Articles | 716 articles |
 | Vector Embeddings | 716 articles, chunked dynamically (384-dim) |
-| Conditions Covered | 10 common health conditions |
+| Conditions Covered | 20 medical conditions |
 | **LangGraph Workflow** | |
 | Total Nodes | 13 nodes with conditional routing |
 | State Fields Tracked | 14 (messages, retrieval, metrics, safety) |

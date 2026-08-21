@@ -216,12 +216,12 @@ COMPLEXITY: [SIMPLE, MODERATE, COMPLEX]
 4. **Web Search** - Current health information via Tavily API
 
 **Why This Matters for Interviews:**
-> "I built custom tools with validated medical logic, then used an LLM agent to orchestrate them. The agent reasons about whether a query needs calculation vs. retrieval vs. research, and calls MY tools accordingly. This demonstrates tool engineering (building infrastructure) not just prompt engineering (using ChatGPT)."
+> "I built custom tools with validated medical logic, then used an LLM agent to orchestrate them. The agent selects tools based on query analysis - whether a query needs calculation vs. retrieval vs. research - and calls MY tools accordingly. This demonstrates tool engineering (building infrastructure) not just prompt engineering (using ChatGPT)."
 
 ### Key Metrics
 
 **Infrastructure Validation:**
-- **Test Coverage**: 132/132 tests passing (80 Phase 4 + 52 Phase 1-3)
+- **Test Coverage**: 222 comprehensive tests passing (calculator: 34, PubMed: 15, agent tools: 21, agent graph: 11, adversarial: 42, and more)
 - **Tool Tests**: Medical calculator (34), PubMed API (14), tool wrappers (21), agent graph (11)
 - **Architecture**: ReAct agent with LangGraph, supports multi-tool coordination
 
