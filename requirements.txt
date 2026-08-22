@@ -4,7 +4,6 @@ langchain-openai==0.1.23
 langchain-google-genai==1.0.10
 langchain-community==0.2.16
 langgraph==0.2.19
-langghainhub==0.1.21
 
 # Vector Store and Embeddings
 chromadb==0.4.24
