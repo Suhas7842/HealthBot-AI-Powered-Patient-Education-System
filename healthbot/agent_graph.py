@@ -153,17 +153,16 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
     )
 
     # Prepare input for agent with appropriate prompt
+    from healthbot.prompts_agent import get_agent_prompt, get_research_prompt
+
+    # Always choose the appropriate system prompt for the current query
+    if is_research:
+        system_prompt = get_research_prompt(topic)
+    else:
+        system_prompt = get_agent_prompt()
+
     if not messages:
-        # First turn: use appropriate prompt based on query type
-        from healthbot.prompts_agent import get_agent_prompt, get_research_prompt
-
-        if is_research:
-            # Research mode: use research prompt that emphasizes multi-step evidence synthesis
-            system_prompt = get_research_prompt(topic)
-        else:
-            # Normal mode: use standard agent prompt
-            system_prompt = get_agent_prompt()
-
+        # First turn: new conversation
         agent_input = {
             "messages": [
                 SystemMessage(content=system_prompt),
@@ -171,9 +170,16 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
             ]
         }
     else:
-        # Follow-up turn: include conversation history (keep existing prompt from messages)
+        # Follow-up turn: update system prompt for current query type
+        # Extract conversation history (skip old system message if present)
+        conversation_history = [msg for msg in messages if not isinstance(msg, SystemMessage)]
+
         agent_input = {
-            "messages": messages + [HumanMessage(content=topic)]
+            "messages": [
+                SystemMessage(content=system_prompt),  # Current prompt
+                *conversation_history,  # Previous conversation
+                HumanMessage(content=topic)  # Current query
+            ]
         }
 
     # Invoke agent

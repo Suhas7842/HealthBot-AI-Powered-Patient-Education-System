@@ -195,89 +195,65 @@ with tab1:
                     )
 
         else:
-            # Generate response
+            # Generate response using GenAI agent
             with chat_container:
                 with st.chat_message("assistant"):
-                    with st.spinner("Retrieving medical information..."):
+                    with st.spinner("Analyzing your question..."):
                         start_time = time.time()
 
-                        # Retrieve context
-                        tool_selector = st.session_state.tool_selector
-                        results = tool_selector.select_and_search(prompt, k=5)
+                        # Use GenAI agent workflow
+                        from healthbot.agent_graph import run_agent_query
 
-                        if results["success"] and results["documents"]:
-                            # Store sources for later
-                            st.session_state.retrieved_docs = results["documents"]
-
-                            # Generate summary
-                            context = tool_selector.format_results(results)
-
-                            llm_prompt = SUMMARY_PROMPT.format(
-                                topic=prompt,
-                                rag_context=context,
-                                schema=MedicalSummary.model_json_schema(),
+                        try:
+                            agent_result = run_agent_query(
+                                query=prompt,
+                                patient_level="beginner"
                             )
 
-                            messages = [
-                                SystemMessage(content=SYSTEM_PROMPT),
-                                HumanMessage(content=llm_prompt),
-                            ]
+                            # Get response and metadata
+                            response_text = agent_result.get("summary", "")
+                            tools_called = agent_result.get("tools_called", [])
+                            query_type = agent_result.get("query_type", "normal")
 
-                            llm_wrapper = st.session_state.llm_wrapper
-                            summary_obj = llm_wrapper.invoke_structured(
-                                messages, MedicalSummary
-                            )
-
-                            # Format response
-                            response_text = f"""**{summary_obj.title}**
-
-**What is it?**
-{summary_obj.condition}
-
-**Causes:**
-{chr(10).join(f"• {cause}" for cause in summary_obj.causes)}
-
-**Symptoms:**
-{chr(10).join(f"• {symptom}" for symptom in summary_obj.symptoms)}
-
-**Treatment:**
-{chr(10).join(f"• {treatment}" for treatment in summary_obj.treatment)}
-
----
-{summary_obj.warning}
-"""
-
+                            # Display response
                             st.markdown(response_text)
-                            st.session_state.summary = summary_obj
+
+                            # Show query type and tools (user-friendly)
+                            latency = time.time() - start_time
+
+                            if query_type == "research":
+                                st.caption(f"🔬 Research Mode • {len(tools_called)} source(s) consulted • {latency:.2f}s")
+                            else:
+                                st.caption(f"⚡ Generated in {latency:.2f}s")
 
                             # Log metrics
-                            latency = time.time() - start_time
-                            avg_score = sum(
-                                doc.get("score", 0) for doc in results["documents"]
-                            ) / len(results["documents"])
-
                             metrics_tracker = st.session_state.metrics_tracker
                             metrics_tracker.log_run(
                                 {
                                     "topic": prompt,
                                     "total_latency": latency,
-                                    "retrieval_score": avg_score,
-                                    "num_retrieved_docs": len(results["documents"]),
-                                    "tool_calls": 1,
+                                    "retrieval_score": 0.0,  # Agent handles internally
+                                    "num_retrieved_docs": len(tools_called),
+                                    "tool_calls": len(tools_called),
                                     "confidence_score": 0.85,
                                     "emergency_detected": False,
-                                    "used_rag": True,
+                                    "used_rag": "medical_rag_search" in tools_called,
                                 }
                             )
 
-                            # Show execution time
-                            st.caption(
-                                f"⚡ Generated in {latency:.2f}s"
-                            )
+                            # Store response for quiz generation
+                            if response_text:
+                                # Create a simple summary object for quiz compatibility
+                                class SimpleSummary:
+                                    def __init__(self, text):
+                                        self.condition = text
 
-                        else:
-                            error_msg = "I couldn't find relevant medical information. Please try rephrasing your question."
+                                st.session_state.summary = SimpleSummary(response_text)
+
+                        except Exception as e:
+                            error_msg = f"I encountered an issue processing your question. Please try rephrasing it."
                             st.error(error_msg)
+                            st.caption(f"Error: {str(e)}")
                             response_text = error_msg
 
                         st.session_state.messages.append(
