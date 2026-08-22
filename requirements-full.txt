@@ -1,0 +1,47 @@
+# Core LangChain and LangGraph
+langchain==0.2.16
+langchain-openai==0.1.23
+langchain-google-genai==1.0.10
+langchain-community==0.2.16
+langgraph==0.2.19
+
+# Vector Store and Embeddings
+chromadb==0.4.24
+pinecone-client>=3.0.0
+sentence-transformers==2.7.0  # Includes cross-encoders for reranking
+
+# Data Processing
+biopython==1.83
+pandas==2.2.2
+numpy==1.26.4
+
+# Search and Retrieval
+tavily-python==0.4.0
+rank-bm25==0.2.2
+
+# Evaluation
+ragas==0.1.9
+datasets==2.19.0
+
+# LLM APIs
+google-generativeai>=0.3.0
+
+# API and Web
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+streamlit==1.35.0
+pydantic==2.7.4
+pydantic-settings==2.3.3
+
+# Utilities
+python-dotenv==1.0.1
+tenacity==8.4.1
+tqdm==4.66.4
+
+# Testing
+pytest==8.2.2
+pytest-asyncio==0.23.7
+
+# Development
+black==24.4.2
+mypy==1.10.0
