@@ -250,6 +250,13 @@ with tab1:
 
                                 st.session_state.summary = SimpleSummary(response_text)
 
+                            # Store sources information for Sources tab
+                            st.session_state.agent_sources = {
+                                "tools_called": tools_called,
+                                "query_type": query_type,
+                                "tool_call_trace": agent_result.get("tool_call_trace", [])
+                            }
+
                         except Exception as e:
                             error_msg = f"I encountered an issue processing your question. Please try rephrasing it."
                             st.error(error_msg)
@@ -315,12 +322,37 @@ with tab3:
     st.subheader("📚 Medical Sources")
     st.caption("Evidence used to answer your question")
 
-    if hasattr(st.session_state, "retrieved_docs") and st.session_state.retrieved_docs:
+    # Check if agent sources are available
+    if hasattr(st.session_state, "agent_sources") and st.session_state.agent_sources:
+        agent_info = st.session_state.agent_sources
+        tools = agent_info.get("tools_called", [])
+        query_type = agent_info.get("query_type", "normal")
+
+        if tools:
+            st.info(f"**Query Type:** {'🔬 Research Mode' if query_type == 'research' else '💬 Normal'}")
+
+            st.write("**Sources Consulted:**")
+            for i, tool in enumerate(tools, 1):
+                tool_names = {
+                    "medical_rag_search": "📚 Medical Knowledge Base (716 curated PubMed articles)",
+                    "pubmed_api_search": "🔬 PubMed Research Database (35M+ papers)",
+                    "medical_calculator": "🧮 Medical Calculator",
+                    "web_search": "🌐 Web Search"
+                }
+                display_name = tool_names.get(tool, tool)
+                st.write(f"{i}. {display_name}")
+
+            if query_type == "research":
+                st.success("✓ Research mode combined multiple evidence sources for comprehensive answer")
+        else:
+            st.info("No sources recorded for this response.")
+
+    # Fallback: show old-style retrieved docs if available (backward compatibility)
+    elif hasattr(st.session_state, "retrieved_docs") and st.session_state.retrieved_docs:
         for i, doc in enumerate(st.session_state.retrieved_docs, 1):
             with st.expander(
                 f"📄 Source {i}: {doc.get('metadata', {}).get('title', 'Unknown')[:80]}..."
             ):
-                # Show user-friendly metadata only
                 pmid = doc.get('metadata', {}).get('pmid', 'N/A')
                 if pmid != 'N/A':
                     st.caption(f"PubMed ID: {pmid}")
