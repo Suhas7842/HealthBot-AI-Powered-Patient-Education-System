@@ -53,20 +53,22 @@ SMOKE_TEST_CASES = [
         },
     },
     {
-        "name": "Research (PubMed)",
+        "name": "Research (PubMed or RAG)",
         "query": "What are recent studies on diabetes treatment?",
         "expected_tools": {
-            "required": ["pubmed_api_search", "medical_rag_search"],  # Either valid
+            "required": [],
+            "at_least_one": ["pubmed_api_search", "medical_rag_search"],  # Must use at least one
             "optional": [],
             "inappropriate": []
         },
     },
     {
-        "name": "Web search",
+        "name": "Web search or research",
         "query": "Latest COVID-19 vaccine recommendations",
         "expected_tools": {
-            "required": ["web_search", "pubmed_api_search"],  # Either valid
-            "optional": ["medical_rag_search"],
+            "required": [],
+            "at_least_one": ["web_search", "pubmed_api_search"],  # Must use at least one
+            "optional": ["medical_rag_search"],  # May also use for background
             "inappropriate": []
         },
     },
@@ -127,7 +129,7 @@ def run_smoke_test(use_cache: bool = True):
         eval_result = evaluate_tool_selection(tools_called, expected_tools)
 
         # Check pass/fail
-        if eval_result["has_required_tool"] and not eval_result["used_inappropriate_tool"]:
+        if eval_result["has_required_tool"] and eval_result["has_at_least_one"] and not eval_result["used_inappropriate_tool"]:
             print(f"Result: PASS")
             passed += 1
             results.append({
@@ -141,6 +143,7 @@ def run_smoke_test(use_cache: bool = True):
         else:
             print(f"Result: FAIL")
             print(f"  Has required: {eval_result['has_required_tool']}")
+            print(f"  Has at least one: {eval_result['has_at_least_one']}")
             print(f"  Used inappropriate: {eval_result['used_inappropriate_tool']}")
             failed += 1
             results.append({

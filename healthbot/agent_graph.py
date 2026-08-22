@@ -103,10 +103,11 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
 
     This is where the LLM agent:
     1. Receives user query
-    2. Selects appropriate tools based on query analysis
-    3. Calls tools (YOUR custom tools)
-    4. Synthesizes results
-    5. Returns cited response
+    2. Detects if query is research-style (multi-source evidence synthesis)
+    3. Selects appropriate tools based on query analysis
+    4. Calls tools (YOUR custom tools)
+    5. Synthesizes results
+    6. Returns cited response
 
     Args:
         state: Current conversation state
@@ -117,6 +118,12 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
     # Get topic and messages
     topic = state.get("topic", "")
     messages = state.get("messages", [])
+
+    # Detect if this is a research-style query
+    from healthbot.routing import QueryClassifier
+    classifier = QueryClassifier()
+    is_research = classifier.is_research_query(topic)
+    query_type = "research" if is_research else "normal"
 
     # Initialize LLM with tool calling (support both Gemini and OpenAI/Groq)
     if settings.LLM_PROVIDER == "gemini":
@@ -145,17 +152,26 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
         tools,
     )
 
-    # Prepare input for agent
+    # Prepare input for agent with appropriate prompt
     if not messages:
-        # First turn: use topic as initial message
+        # First turn: use appropriate prompt based on query type
+        from healthbot.prompts_agent import get_agent_prompt, get_research_prompt
+
+        if is_research:
+            # Research mode: use research prompt that emphasizes multi-step evidence synthesis
+            system_prompt = get_research_prompt(topic)
+        else:
+            # Normal mode: use standard agent prompt
+            system_prompt = get_agent_prompt()
+
         agent_input = {
             "messages": [
-                SystemMessage(content=get_agent_prompt()),
+                SystemMessage(content=system_prompt),
                 HumanMessage(content=topic)
             ]
         }
     else:
-        # Follow-up turn: include conversation history
+        # Follow-up turn: include conversation history (keep existing prompt from messages)
         agent_input = {
             "messages": messages + [HumanMessage(content=topic)]
         }
@@ -197,6 +213,7 @@ def agent_node(state: PatientState) -> Dict[str, Any]:
     return {
         "summary": summary,
         "messages": agent_messages,
+        "query_type": query_type,
         "tools_called": tools_called,
         "tool_results": tool_results,
         "tool_call_trace": tool_call_trace,
@@ -235,6 +252,8 @@ def run_agent_query(query: str, patient_level: str = "beginner") -> Dict[str, An
         # Safety
         "emergency_detected": False,
         "disclaimer_shown": False,
+        # Query classification
+        "query_type": None,
         # Agent tool orchestration
         "tools_called": [],
         "tool_results": [],

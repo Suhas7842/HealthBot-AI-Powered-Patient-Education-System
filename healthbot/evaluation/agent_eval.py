@@ -25,31 +25,56 @@ AGENT_TEST_CASES = [
     },
     {
         "query": "Calculate my medication dosage: 70kg patient, 5mg/kg",
-        "expected_tools": ["medical_calculator"],
+        "expected_tools": {
+            "required": ["medical_calculator"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Pure calculation, no medical context needed",
         "category": "single_tool",
     },
     {
         "query": "What causes Type 2 diabetes?",
-        "expected_tools": ["medical_rag_search"],
+        "expected_tools": {
+            "required": ["medical_rag_search"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Common condition in local knowledge base",
         "category": "single_tool",
     },
     {
         "query": "Compare recent studies on diabetes treatment efficacy",
-        "expected_tools": ["pubmed_api_search"],
+        "expected_tools": {
+            "required": ["pubmed_api_search"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Research comparison needs PubMed, not local KB",
         "category": "single_tool",
     },
     {
         "query": "What are the symptoms of hypertension?",
-        "expected_tools": ["medical_rag_search"],
+        "expected_tools": {
+            "required": ["medical_rag_search"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Common condition, symptoms available in local KB",
         "category": "single_tool",
     },
     {
         "query": "Calculate creatinine clearance: 65 year old male, 70kg, serum cr 1.2",
-        "expected_tools": ["medical_calculator"],
+        "expected_tools": {
+            "required": ["medical_calculator"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Kidney function calculation",
         "category": "single_tool",
     },
@@ -66,28 +91,43 @@ AGENT_TEST_CASES = [
     {
         "query": "Recent COVID-19 treatment updates",
         "expected_tools": {
-            "required": ["web_search", "pubmed_api_search"],  # Either is valid
-            "optional": ["medical_rag_search"],  # Background info optional
+            "required": [],
+            "optional": ["web_search", "pubmed_api_search", "medical_rag_search"],
             "inappropriate": []
         },
-        "reason": "web_search for news OR pubmed_api_search for recent research both valid. Requires at least one.",
+        "reason": "web_search for news OR pubmed_api_search for recent research both valid. At least one should be used.",
         "category": "single_tool",
     },
     {
         "query": "What are the risk factors for cardiovascular disease?",
-        "expected_tools": ["medical_rag_search"],
+        "expected_tools": {
+            "required": ["medical_rag_search"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Medical education, available in local KB",
         "category": "single_tool",
     },
     {
         "query": "Latest research on cancer immunotherapy",
-        "expected_tools": ["pubmed_api_search"],
+        "expected_tools": {
+            "required": ["pubmed_api_search"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Recent research, broad topic",
         "category": "single_tool",
     },
     {
         "query": "What is asthma and how is it treated?",
-        "expected_tools": ["medical_rag_search"],
+        "expected_tools": {
+            "required": ["medical_rag_search"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Common condition with treatment info in local KB",
         "category": "single_tool",
     },
@@ -103,53 +143,88 @@ AGENT_TEST_CASES = [
     },
     {
         "query": "Compare Type 1 vs Type 2 diabetes symptoms",
-        "expected_tools": ["medical_rag_search"],
+        "expected_tools": {
+            "required": ["medical_rag_search"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Comparative medical question, both in local KB",
         "category": "single_tool",
     },
     {
         "query": "What's the normal BMI range?",
-        "expected_tools": ["medical_rag_search"],
+        "expected_tools": {
+            "required": ["medical_rag_search"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Medical information, no calculation needed",
         "category": "single_tool",
     },
     {
         "query": "Recent meta-analysis on statins for cholesterol",
-        "expected_tools": ["pubmed_api_search"],
+        "expected_tools": {
+            "required": ["pubmed_api_search"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Specific research query, needs PubMed",
         "category": "single_tool",
     },
     {
         "query": "What is COPD?",
-        "expected_tools": ["medical_rag_search"],
+        "expected_tools": {
+            "required": ["medical_rag_search"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Common condition in local knowledge base",
         "category": "single_tool",
     },
     {
         "query": "Calculate medication dose: 50kg patient at 3mg/kg",
-        "expected_tools": ["medical_calculator"],
+        "expected_tools": {
+            "required": ["medical_calculator"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Pure dosage calculation",
         "category": "single_tool",
     },
     {
         "query": "What are modifiable risk factors for heart disease?",
-        "expected_tools": ["medical_rag_search"],
+        "expected_tools": {
+            "required": ["medical_rag_search"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Medical education, preventive care",
         "category": "single_tool",
     },
     {
         "query": "New WHO guidelines on obesity management",
         "expected_tools": {
-            "required": ["web_search", "pubmed_api_search"],  # Either is valid
-            "optional": [],
+            "required": [],
+            "optional": ["web_search", "pubmed_api_search"],
             "inappropriate": []
         },
-        "reason": "web_search for official guidelines OR pubmed_api_search for research both valid.",
+        "reason": "web_search for official guidelines OR pubmed_api_search for research both valid. At least one should be used.",
         "category": "single_tool",
     },
     {
         "query": "What's my kidney function if creatinine clearance is 45 ml/min?",
-        "expected_tools": ["medical_rag_search"],
+        "expected_tools": {
+            "required": ["medical_rag_search"],
+            "at_least_one": [],
+            "optional": [],
+            "inappropriate": []
+        },
         "reason": "Interpretation of lab value, no calculation",
         "category": "single_tool",
     },
@@ -170,7 +245,8 @@ def evaluate_tool_selection(
         expected_tools: Either:
             - List[str]: Simple list (backward compatible)
             - Dict with keys:
-                - 'required': Must use at least one
+                - 'required': ALL of these must be used
+                - 'at_least_one': At least ONE of these must be used
                 - 'optional': May use (no penalty if missing)
                 - 'inappropriate': Should NOT use
 
@@ -181,17 +257,30 @@ def evaluate_tool_selection(
             - precision: float (% of actual tools that were appropriate)
             - recall: float (% of required tools that were called)
             - score: float (F1 score)
-            - has_required_tool: bool (used at least one required tool)
+            - has_required_tool: bool (used all required tools)
+            - has_at_least_one: bool (used at least one from at_least_one set)
             - used_inappropriate_tool: bool (used tool marked inappropriate)
     """
+    # Handle empty actual_tools case
+    # Need to check expected_tools structure to determine has_required/has_at_least_one correctly
     if not actual_tools:
+        # For dict format, check if requirements exist
+        if isinstance(expected_tools, dict):
+            has_required = len(expected_tools.get('required', [])) == 0  # No required = satisfied
+            has_at_least_one = len(expected_tools.get('at_least_one', [])) == 0  # No at_least_one = satisfied
+        else:
+            # Simple list format: expects at least one tool
+            has_required = False
+            has_at_least_one = False
+
         return {
             "exact_match": False,
             "partial_match": False,
             "precision": 0.0,
             "recall": 0.0,
             "score": 0.0,
-            "has_required_tool": False,
+            "has_required_tool": has_required,
+            "has_at_least_one": has_at_least_one,
             "used_inappropriate_tool": False,
         }
 
@@ -227,27 +316,33 @@ def evaluate_tool_selection(
             "recall": recall,
             "score": f1_score,
             "has_required_tool": partial_match,  # Any match counts as "required"
+            "has_at_least_one": partial_match,  # Same for backward compatibility
             "used_inappropriate_tool": False,  # No concept in simple format
         }
 
-    # Handle flexible format (dict with required/optional/inappropriate)
+    # Handle flexible format (dict with required/at_least_one/optional/inappropriate)
     required = set(expected_tools.get('required', []))
+    at_least_one = set(expected_tools.get('at_least_one', []))
     optional = set(expected_tools.get('optional', []))
     inappropriate = set(expected_tools.get('inappropriate', []))
 
-    # Check if agent used at least one required tool
-    has_required = len(actual_set & required) > 0 if required else True
+    # Check if agent used ALL required tools
+    has_required = required <= actual_set if required else True
+
+    # Check if agent used at least ONE from at_least_one set
+    has_at_least_one = bool(actual_set & at_least_one) if at_least_one else True
 
     # Check if agent used any inappropriate tools
     used_inappropriate = len(actual_set & inappropriate) > 0
 
-    # Appropriate tools = required + optional
-    appropriate = required | optional
+    # Appropriate tools = required + at_least_one + optional
+    appropriate = required | at_least_one | optional
     correct_tools = actual_set & appropriate
 
-    # Exact match: uses required tools and optionally some optional tools, no inappropriate
+    # Exact match: uses required tools, at least one from at_least_one, optionally some optional, no inappropriate
     exact_match = (
         has_required and
+        has_at_least_one and
         not used_inappropriate and
         actual_set <= appropriate  # All actual tools are in appropriate set
     )
@@ -278,6 +373,7 @@ def evaluate_tool_selection(
         "recall": recall,
         "score": f1_score,
         "has_required_tool": has_required,
+        "has_at_least_one": has_at_least_one,
         "used_inappropriate_tool": used_inappropriate,
     }
 

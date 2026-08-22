@@ -19,7 +19,8 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-# Cache versioning - increment when agent prompt, tools, or evaluation logic changes
+# Cache versioning - increment when agent execution behavior changes
+# (agent prompt, tools, tool schemas - NOT evaluation logic changes)
 AGENT_EVAL_VERSION = "v1"
 
 # Cache configuration

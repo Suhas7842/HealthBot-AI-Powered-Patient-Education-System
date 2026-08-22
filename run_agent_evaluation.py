@@ -7,7 +7,7 @@ Supports multiple execution modes:
 - MOCK: Test evaluation logic with deterministic outputs (0 LLM calls)
 
 Configuration:
-- LIVE_BUDGET: Maximum number of live LLM calls (default: 20)
+- LIVE_BUDGET: Maximum number of live LLM calls (default: 5, conservative for free tier)
 - USE_CACHE: Whether to use persistent cache (default: True)
 
 This provides empirical evidence for agent performance while respecting free-tier constraints.
@@ -218,8 +218,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--budget",
         type=int,
-        default=20,
-        help="Maximum number of live LLM calls (live mode only)",
+        default=5,
+        help="Maximum number of live LLM calls (live mode only). Default is conservative for free tier.",
     )
     parser.add_argument(
         "--no-cache",

@@ -25,6 +25,7 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 0,
       "query": "What is BMI and what's mine if I'm 70kg and 1.75m?",
@@ -52,12 +53,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 1,
       "query": "Calculate my medication dosage: 70kg patient, 5mg/kg",
-      "expected_tools": [
-        "medical_calculator"
-      ],
+      "expected_tools": {
+        "required": [
+          "medical_calculator"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "medical_calculator"
       ],
@@ -73,12 +80,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 2,
       "query": "What causes Type 2 diabetes?",
-      "expected_tools": [
-        "medical_rag_search"
-      ],
+      "expected_tools": {
+        "required": [
+          "medical_rag_search"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "medical_rag_search"
       ],
@@ -94,12 +107,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 3,
       "query": "Compare recent studies on diabetes treatment efficacy",
-      "expected_tools": [
-        "pubmed_api_search"
-      ],
+      "expected_tools": {
+        "required": [
+          "pubmed_api_search"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "pubmed_api_search"
       ],
@@ -115,12 +134,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 4,
       "query": "What are the symptoms of hypertension?",
-      "expected_tools": [
-        "medical_rag_search"
-      ],
+      "expected_tools": {
+        "required": [
+          "medical_rag_search"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "medical_rag_search"
       ],
@@ -136,12 +161,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 5,
       "query": "Calculate creatinine clearance: 65 year old male, 70kg, serum cr 1.2",
-      "expected_tools": [
-        "medical_calculator"
-      ],
+      "expected_tools": {
+        "required": [
+          "medical_calculator"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "medical_calculator"
       ],
@@ -157,6 +188,7 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 6,
       "query": "What's my BMI if I weigh 85kg and I'm 1.80m tall? Is that healthy?",
@@ -184,25 +216,24 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 7,
       "query": "Recent COVID-19 treatment updates",
       "expected_tools": {
-        "required": [
-          "web_search",
-          "pubmed_api_search"
-        ],
+        "required": [],
         "optional": [
+          "web_search",
+          "pubmed_api_search",
           "medical_rag_search"
         ],
         "inappropriate": []
       },
       "actual_tools": [
-        "web_search",
-        "pubmed_api_search"
+        "web_search"
       ],
       "category": "single_tool",
-      "reason": "web_search for news OR pubmed_api_search for recent research both valid. Requires at least one.",
+      "reason": "web_search for news OR pubmed_api_search for recent research both valid. At least one should be used.",
       "status": "MOCK",
       "evaluated": true
     },
@@ -213,12 +244,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 8,
       "query": "What are the risk factors for cardiovascular disease?",
-      "expected_tools": [
-        "medical_rag_search"
-      ],
+      "expected_tools": {
+        "required": [
+          "medical_rag_search"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "medical_rag_search"
       ],
@@ -234,12 +271,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 9,
       "query": "Latest research on cancer immunotherapy",
-      "expected_tools": [
-        "pubmed_api_search"
-      ],
+      "expected_tools": {
+        "required": [
+          "pubmed_api_search"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "pubmed_api_search"
       ],
@@ -255,12 +298,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 10,
       "query": "What is asthma and how is it treated?",
-      "expected_tools": [
-        "medical_rag_search"
-      ],
+      "expected_tools": {
+        "required": [
+          "medical_rag_search"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "medical_rag_search"
       ],
@@ -276,6 +325,7 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 11,
       "query": "Calculate BMI for 60kg, 1.65m and explain what it means",
@@ -303,12 +353,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 12,
       "query": "Compare Type 1 vs Type 2 diabetes symptoms",
-      "expected_tools": [
-        "medical_rag_search"
-      ],
+      "expected_tools": {
+        "required": [
+          "medical_rag_search"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "medical_rag_search"
       ],
@@ -324,12 +380,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 13,
       "query": "What's the normal BMI range?",
-      "expected_tools": [
-        "medical_rag_search"
-      ],
+      "expected_tools": {
+        "required": [
+          "medical_rag_search"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "medical_rag_search"
       ],
@@ -345,12 +407,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 14,
       "query": "Recent meta-analysis on statins for cholesterol",
-      "expected_tools": [
-        "pubmed_api_search"
-      ],
+      "expected_tools": {
+        "required": [
+          "pubmed_api_search"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "pubmed_api_search"
       ],
@@ -366,12 +434,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 15,
       "query": "What is COPD?",
-      "expected_tools": [
-        "medical_rag_search"
-      ],
+      "expected_tools": {
+        "required": [
+          "medical_rag_search"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "medical_rag_search"
       ],
@@ -387,12 +461,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 16,
       "query": "Calculate medication dose: 50kg patient at 3mg/kg",
-      "expected_tools": [
-        "medical_calculator"
-      ],
+      "expected_tools": {
+        "required": [
+          "medical_calculator"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "medical_calculator"
       ],
@@ -408,12 +488,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 17,
       "query": "What are modifiable risk factors for heart disease?",
-      "expected_tools": [
-        "medical_rag_search"
-      ],
+      "expected_tools": {
+        "required": [
+          "medical_rag_search"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "medical_rag_search"
       ],
@@ -429,23 +515,23 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 18,
       "query": "New WHO guidelines on obesity management",
       "expected_tools": {
-        "required": [
+        "required": [],
+        "optional": [
           "web_search",
           "pubmed_api_search"
         ],
-        "optional": [],
         "inappropriate": []
       },
       "actual_tools": [
-        "web_search",
-        "pubmed_api_search"
+        "web_search"
       ],
       "category": "single_tool",
-      "reason": "web_search for official guidelines OR pubmed_api_search for research both valid.",
+      "reason": "web_search for official guidelines OR pubmed_api_search for research both valid. At least one should be used.",
       "status": "MOCK",
       "evaluated": true
     },
@@ -456,12 +542,18 @@
       "recall": 1.0,
       "score": 1.0,
       "has_required_tool": true,
+      "has_at_least_one": true,
       "used_inappropriate_tool": false,
       "test_id": 19,
       "query": "What's my kidney function if creatinine clearance is 45 ml/min?",
-      "expected_tools": [
-        "medical_rag_search"
-      ],
+      "expected_tools": {
+        "required": [
+          "medical_rag_search"
+        ],
+        "at_least_one": [],
+        "optional": [],
+        "inappropriate": []
+      },
       "actual_tools": [
         "medical_rag_search"
       ],

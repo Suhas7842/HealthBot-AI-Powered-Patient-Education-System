@@ -16,7 +16,10 @@ import time
 from typing import Dict, Any, Optional, Literal
 from pathlib import Path
 
-from healthbot.agent_graph import run_agent_query
+# Lazy import: only load agent_graph when actually executing live LLM calls
+# This allows cache/mock tests to run without langgraph dependency
+# from healthbot.agent_graph import run_agent_query  # MOVED to execute_with_retry
+
 from healthbot.evaluation.agent_cache import (
     load_from_cache,
     save_to_cache,
@@ -26,11 +29,11 @@ from healthbot.evaluation.agent_cache import (
 from healthbot.config import settings
 
 
-# Rate limit configuration
-MAX_RETRIES = 3
+# Rate limit configuration (conservative for free tier)
+MAX_RETRIES = 1  # Total 2 attempts (initial + 1 retry)
 INITIAL_BACKOFF = 2.0  # seconds
 MAX_BACKOFF = 30.0  # seconds
-INTER_REQUEST_DELAY = 1.0  # Minimum delay between live calls
+INTER_REQUEST_DELAY = 2.0  # Minimum delay between live calls
 
 
 class ExecutionResult:
@@ -164,6 +167,9 @@ def execute_with_retry(
         RateLimitError: If rate limited after retries
         Exception: Other execution errors
     """
+    # Lazy import: only load when actually calling live LLM
+    from healthbot.agent_graph import run_agent_query
+
     backoff = INITIAL_BACKOFF
 
     for attempt in range(max_retries + 1):
@@ -199,7 +205,7 @@ class RateLimitError(Exception):
 
 def execute_mock(
     query: str,
-    expected_tools: list,
+    expected_tools: list | dict,
 ) -> ExecutionResult:
     """
     Execute in mock mode with deterministic output.
@@ -208,17 +214,39 @@ def execute_mock(
 
     Args:
         query: User query
-        expected_tools: Tools to mock as called
+        expected_tools: Expected tools (list or dict format)
 
     Returns:
         ExecutionResult with MOCK status
     """
+    # Determine which tools to mock
+    if isinstance(expected_tools, list):
+        # Simple list format - use as-is
+        tools_to_call = expected_tools
+    else:
+        # Dictionary format - generate a valid tool selection
+        required = expected_tools.get("required", [])
+        at_least_one = expected_tools.get("at_least_one", [])
+        optional = expected_tools.get("optional", [])
+
+        # Start with all required tools
+        tools_to_call = list(required)
+
+        # If at_least_one specified, pick first one
+        if at_least_one:
+            tools_to_call.append(at_least_one[0])
+
+        # If no required and no at_least_one, but optional exists, pick first optional
+        # (represents a plausible agent choice from alternatives)
+        if not tools_to_call and optional:
+            tools_to_call.append(optional[0])
+
     # Create mock result
     mock_result = {
         "summary": f"[MOCK] Answer to: {query[:50]}...",
-        "tools_called": expected_tools if isinstance(expected_tools, list) else expected_tools.get("required", []),
+        "tools_called": tools_to_call,
         "disclaimer_shown": True,
-        "tool_call_trace": [f"[MOCK] Called: {t}" for t in (expected_tools if isinstance(expected_tools, list) else expected_tools.get("required", []))],
+        "tool_call_trace": [f"[MOCK] Called: {t}" for t in tools_to_call],
     }
 
     return ExecutionResult(
@@ -254,6 +282,7 @@ def batch_execute(
     """
     results = []
     live_calls_made = 0
+    rate_limited = False  # Stop further live calls after rate limit
 
     for i, query in enumerate(queries):
         # Mock mode
@@ -263,9 +292,9 @@ def batch_execute(
             results.append(result)
             continue
 
-        # Check live budget
-        if live_budget is not None and live_calls_made >= live_budget:
-            # Budget exhausted - skip remaining uncached queries
+        # Check live budget or rate limit
+        if (live_budget is not None and live_calls_made >= live_budget) or rate_limited:
+            # Budget exhausted or rate limited - skip remaining uncached queries
             cached = load_from_cache(query, model, patient_level) if use_cache else None
             if cached:
                 results.append(ExecutionResult(query=query, status="CACHED", result=cached))
@@ -275,6 +304,11 @@ def batch_execute(
 
         # Execute with cache
         result = execute_with_cache(query, model, patient_level, use_cache)
+
+        # Stop further live calls if rate limited
+        if result.status == "RATE_LIMITED":
+            rate_limited = True
+            print("  Rate limit detected. Stopping further live calls.")
 
         # Track live calls
         if result.status == "SUCCESS":

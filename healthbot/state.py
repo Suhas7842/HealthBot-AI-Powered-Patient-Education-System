@@ -33,6 +33,9 @@ class PatientState(TypedDict):
     emergency_detected: bool  # Whether emergency keywords detected
     disclaimer_shown: bool  # Whether medical disclaimer was shown
 
+    # Query classification
+    query_type: str | None  # "normal" or "research" - tracks which workflow was used
+
     # Agent tool orchestration tracking
     tools_called: list[str]  # Names of tools agent called
     tool_results: list[dict]  # Results from each tool call

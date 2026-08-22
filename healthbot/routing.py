@@ -88,6 +88,19 @@ class QueryClassifier:
             r"\bhow can i avoid\b",
         ]
 
+        # Research-style query patterns (complex, multi-source queries)
+        self.research_patterns = [
+            r"\brecent (research|studies|evidence|literature)\b",
+            r"\bwhat does (recent |the )?research (say|show|suggest)\b",
+            r"\b(compare|contrast) (recent )?studies\b",
+            r"\bevidence for\b",
+            r"\baccording to (recent )?(research|studies|literature)\b",
+            r"\bestablished (knowledge|evidence) (and|vs) recent",
+            r"\bmajor .* and (what|which)",  # "major risk factors and which are modifiable"
+            r"\b(modifiable|non-modifiable) (risk )?factors?\b",
+            r"\b(compare|contrast) .* (and|with|vs)\b",
+        ]
+
         # Follow-up detection patterns
         self.follow_up_indicators = [
             r"\bit\b",
@@ -205,6 +218,42 @@ class QueryClassifier:
         else:
             logger.debug(f"Classified as SIMPLE: {query} (score={complexity_score}, words={word_count})")
             return QueryComplexity.SIMPLE
+
+    def is_research_query(self, query: str) -> bool:
+        """
+        Detect if query is research-style (requires multi-source evidence synthesis).
+
+        Research queries typically:
+        - Ask about recent research/evidence
+        - Compare or contrast information
+        - Ask multi-part questions
+        - Explicitly request modifiable vs non-modifiable factors
+        - Request evidence-based analysis
+
+        Args:
+            query: User's medical query
+
+        Returns:
+            True if query should use research mode, False for normal mode
+
+        Examples:
+            >>> classifier = QueryClassifier()
+            >>> classifier.is_research_query("What is diabetes?")
+            False
+            >>> classifier.is_research_query("What does recent research say about diabetes risk factors?")
+            True
+            >>> classifier.is_research_query("Compare established knowledge with recent studies on hypertension")
+            True
+        """
+        query_lower = query.lower()
+
+        # Check research patterns
+        if any(re.search(p, query_lower) for p in self.research_patterns):
+            logger.debug(f"Detected RESEARCH query: {query}")
+            return True
+
+        logger.debug(f"Detected NORMAL query: {query}")
+        return False
 
     def get_retrieval_params(
         self, intent: QueryIntent, complexity: QueryComplexity

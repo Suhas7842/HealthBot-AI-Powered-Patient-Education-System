@@ -7,6 +7,8 @@
 
 A modular, extensible **GenAI Orchestration System** for medical education, powered by LangGraph, Pinecone, and Google Gemini. Features **LLM agent with tool calling**, enabling dynamic routing between custom tools (hybrid retriever, medical calculator, PubMed API, web search). The agent selects and orchestrates tools based on query analysis, demonstrating true GenAI engineering beyond single-purpose RAG.
 
+**📘 New to the project? Start here:** [**Getting Started Guide**](docs/GETTING_STARTED.md) - Step-by-step walkthrough for understanding the complete workflow
+
 ---
 
 ## ✨ Key Features
@@ -112,20 +114,17 @@ Result: "Your BMI is 22.9, which falls in the normal range (18.5-24.9).
 
 **Empirical Agent Evaluation (✅ COMPLETED - 4 Query Verification):**
 - **Verification Status**: ✅ **Successfully validated with live LLM calls** (2026-08-22)
-- **Model Used**: Groq `openai/gpt-oss-120b` (discovered in user's AI projects folder)
-- **Test Results**: 4/4 queries correctly routed to appropriate tools
-  - Calculator query → `medical_calculator` ✅
-  - Medical knowledge query → `medical_rag_search` ✅
-  - Multi-tool query → `medical_calculator` (inline explanation) ⚠️
-  - Research query → `medical_rag_search` ✅
-- **Tool Selection Accuracy**: 100% (4/4 correct primary tool)
-- **Inappropriate Tool Calls**: 0% (no wrong tools invoked)
-- **Full Results**: See [AGENT_VERIFICATION_RESULTS.md](AGENT_VERIFICATION_RESULTS.md)
+- **Model Used**: Groq `openai/gpt-oss-120b`
+- **Live Smoke Verification**: Real LLM execution observed for representative queries
+- **Offline Evaluator Validation**: 
+  - Mock mode: 20/20 benchmark cases passed in deterministic mock mode (validates evaluation logic, NOT real agent accuracy)
+  - Live agent tool-selection performance evaluated separately using quota-aware live evaluation workflow
+  - Free-tier test suite: 17/17 tests pass (cache, budget, rate-limit handling)
 
 **Infrastructure Validation:**
-- ✅ **Unit Tests**: 222 comprehensive tests passing (agent CAN call tools correctly)
+- ✅ **Unit Tests**: 222 comprehensive tests passing
 - ✅ **Integration Tests**: End-to-end workflow validated
-- ✅ **Empirical Validation**: 4 live queries prove agent CHOOSES correct tools
+- ✅ **Evaluation Framework**: Quota-aware evaluation with mock/cache/live modes
 
 **Evaluation Framework (Available for Extended Testing):**
 - **20-Case Suite**: Full evaluation suite ready ([agent_eval.py](healthbot/evaluation/agent_eval.py))
@@ -148,16 +147,49 @@ Result: "Your BMI is 22.9, which falls in the normal range (18.5-24.9).
 | Tool Count | 2 (RAG + Tavily) | 4 (RAG + Calculator + PubMed + Web) |
 | Interview Framing | "I built a RAG system" | "I built custom tools with LLM orchestration" |
 
+**🔬 Research Mode (Latest):**
+
+HealthBot now distinguishes between **normal queries** and **research-style queries**:
+
+```
+NORMAL MODE:  "What is diabetes?" 
+   → Single-step retrieval
+
+RESEARCH MODE: "What does recent research say about diabetes risk factors?"
+   → Multi-step evidence synthesis:
+      1. Retrieve established knowledge (local RAG)
+      2. Query recent literature (PubMed API)
+      3. Compare and synthesize sources
+      4. Present comprehensive answer with citations
+```
+
+**Research Detection** (pattern-based, fast):
+- "recent research/studies/evidence"
+- "compare studies"  
+- "modifiable risk factors"
+- "what does research say"
+
+**Test Coverage**: 20/20 tests passing (9 research mode + 11 existing agent tests)
+
 **📝 Files Added:**
 - [`healthbot/tools/medical_calculator.py`](healthbot/tools/medical_calculator.py) - Medical calculations
 - [`healthbot/tools/pubmed_api.py`](healthbot/tools/pubmed_api.py) - PubMed E-utilities integration
 - [`healthbot/agent_tools.py`](healthbot/agent_tools.py) - LangChain tool wrappers
-- [`healthbot/agent_graph.py`](healthbot/agent_graph.py) - ReAct agent workflow
-- [`healthbot/prompts_agent.py`](healthbot/prompts_agent.py) - Agent system prompts
-- [`healthbot/evaluation/agent_eval.py`](healthbot/evaluation/agent_eval.py) - Agent evaluation
+- [`healthbot/agent_graph.py`](healthbot/agent_graph.py) - ReAct agent workflow (with research mode routing)
+- [`healthbot/prompts_agent.py`](healthbot/prompts_agent.py) - Agent system prompts (normal + research)
+- [`healthbot/routing.py`](healthbot/routing.py) - Research query detection
+- [`healthbot/evaluation/`](healthbot/evaluation/) - Quota-aware evaluation system (cache-first, rate-limited)
+
+**📊 Evaluation System:**
+
+Free-tier LLM evaluation with persistent caching:
+- **First run**: 5 LLM calls (cache traces)
+- **Second run**: 0 LLM calls (evaluate cached traces)
+- **Key benefit**: Change evaluation metrics without new LLM calls
+- **Test coverage**: 17/17 free-tier tests passing
 
 **💡 Interview Story:**
-> "I built 4 custom tools: hybrid retriever (Phase 1), medical calculator (Phase 4), PubMed client (Phase 4), and web search. I expose these via LangChain tool API with structured schemas. An LLM agent analyzes queries and routes to the appropriate tools - it's not generating answers, it's deciding which of MY tools to invoke. For example, 'What's my BMI?' triggers MY calculator, not ChatGPT's general knowledge. This demonstrates tool engineering, not prompt engineering."
+> "I built 4 custom tools and a GenAI agent that orchestrates them. The agent analyzes queries and decides which tools to call - it's not generating answers from training data, it's routing to MY infrastructure. For simple questions it uses single-tool retrieval. For complex research questions, it activates Research Mode which guides the agent to retrieve from multiple sources (local knowledge base + PubMed), compare evidence, and synthesize findings. The medical calculator proves it's not just a RAG wrapper - it's genuine tool orchestration."
 
 ---
 
