@@ -8,7 +8,7 @@ langchain-community==0.2.16
 langgraph==0.2.19
 
 # Vector Store (Pinecone only - no ChromaDB)
-pinecone-client>=3.0.0
+pinecone==5.0.0
 sentence-transformers==3.0.1
 pillow>=10.0.0  # Force newer version with pre-built wheels
 
