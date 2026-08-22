@@ -91,62 +91,56 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Sidebar - Metrics Dashboard
+# Sidebar - User Panel
 with st.sidebar:
-    st.header("📊 System Metrics")
+    st.header("ℹ️ About HealthBot")
 
-    # Calculate metrics
-    metrics_tracker = st.session_state.metrics_tracker
-    if metrics_tracker.run_history:
-        metrics = metrics_tracker.calculate_metrics(recent_n=10)
+    st.write("""
+    **HealthBot** provides evidence-based health education using medical literature
+    and research from trusted sources.
 
-        st.subheader("Recent Performance")
+    **What HealthBot does:**
+    - Answers health questions using 700+ curated medical articles
+    - Provides clear explanations with source citations
+    - Detects medical emergencies and provides guidance
+    - Offers interactive learning with quizzes
 
-        # Latency
-        st.metric("Avg Latency", f"{metrics['latency']['mean']:.2f}s", delta=None)
-
-        # Retrieval
-        st.metric("RAG Hit Rate", f"{metrics['retrieval']['rag_hit_rate'] * 100:.1f}%")
-
-        # Cost
-        st.metric(
-            "Avg Cost/Query",
-            f"${metrics['cost']['estimated_cost_usd'] / max(metrics['usage']['total_runs'], 1):.4f}",
-        )
-
-        # Total runs
-        st.metric("Total Queries", metrics["usage"]["total_runs"])
-
-        # Show details
-        with st.expander("📈 Detailed Metrics"):
-            st.write("**Latency**")
-            st.write(f"- Median: {metrics['latency']['median']:.2f}s")
-            st.write(f"- P95: {metrics['latency']['p95']:.2f}s")
-            st.write(f"- P99: {metrics['latency']['p99']:.2f}s")
-
-            st.write("**Retrieval**")
-            st.write(f"- Mean Score: {metrics['retrieval']['mean_score']:.3f}")
-
-            st.write("**Cost**")
-            st.write(f"- Total Tokens: {metrics['cost']['total_tokens']:,}")
-            st.write(f"- Total Cost: ${metrics['cost']['estimated_cost_usd']:.4f}")
-    else:
-        st.info("No metrics available yet. Start a conversation to generate metrics!")
+    **Important:**
+    - ✅ Educational information only
+    - ❌ Not a substitute for professional medical advice
+    - ❌ Not for diagnosis or treatment
+    - 🚨 For emergencies, call your local emergency number
+    """)
 
     st.divider()
 
-    # About
-    with st.expander("ℹ️ About HealthBot"):
-        st.write("""
-        **HealthBot** is an AI-powered patient education system that provides
-        accurate, evidence-based medical information using RAG (Retrieval-Augmented Generation).
+    # Usage stats (user-friendly)
+    metrics_tracker = st.session_state.metrics_tracker
+    if metrics_tracker.run_history:
+        total_queries = len(metrics_tracker.run_history)
+        st.metric("Questions Asked", total_queries)
+        st.caption("Your conversation history this session")
 
-        **Features:**
-        - 500+ PubMed articles
-        - Hybrid retrieval (semantic + keyword)
-        - Emergency detection
-        - Interactive quizzes
-        - Source citations
+    st.divider()
+
+    # Help section
+    with st.expander("💡 How to Use"):
+        st.write("""
+        **Getting Started:**
+        1. Type your health question in the chat below
+        2. Review the answer and source citations
+        3. Check the **Sources** tab to see the medical literature
+        4. Try the **Quiz** tab to test your understanding
+
+        **Example Questions:**
+        - "What is Type 2 diabetes?"
+        - "What are the symptoms of hypertension?"
+        - "How can I prevent heart disease?"
+
+        **Tips:**
+        - Be specific in your questions
+        - Check the sources for detailed information
+        - Remember: this is educational, not medical advice
         """)
 
 # Main content area
@@ -292,11 +286,12 @@ with tab1:
 
 # Tab 2: Quiz
 with tab2:
-    st.subheader("📝 Comprehension Quiz")
+    st.subheader("📝 Test Your Understanding")
+    st.caption("Interactive quiz based on your health topic")
 
     if st.session_state.summary:
         if st.button("Generate Quiz Question", type="primary"):
-            with st.spinner("Creating quiz..."):
+            with st.spinner("Creating your quiz..."):
                 # Generate quiz
                 summary_text = str(st.session_state.summary.condition)
 
@@ -321,7 +316,7 @@ with tab2:
             st.markdown(f"**Question:** {quiz.question}")
 
             answer = st.radio(
-                "Select your answer:",
+                "Choose your answer:",
                 options=["A", "B", "C", "D"],
                 format_func=lambda x: f"{x}) {quiz.choices['ABCD'.index(x)]}",
             )
@@ -337,29 +332,34 @@ with tab2:
                     )
                     st.info(f"💡 {quiz.explanation}")
     else:
-        st.info("Start a conversation in the Chat tab to generate a quiz!")
+        st.info("Ask a health question in the Chat tab, then come back here to test your understanding!")
 
 # Tab 3: Sources
 with tab3:
-    st.subheader("📚 Source Documents")
+    st.subheader("📚 Medical Sources")
+    st.caption("Evidence used to answer your question")
 
     if hasattr(st.session_state, "retrieved_docs") and st.session_state.retrieved_docs:
         for i, doc in enumerate(st.session_state.retrieved_docs, 1):
             with st.expander(
-                f"Source {i}: {doc.get('metadata', {}).get('title', 'Unknown')[:80]}..."
+                f"📄 Source {i}: {doc.get('metadata', {}).get('title', 'Unknown')[:80]}..."
             ):
-                st.write(f"**Relevance Score:** {doc.get('score', 0):.3f}")
-                st.write(f"**PMID:** {doc.get('metadata', {}).get('pmid', 'N/A')}")
-                st.write(
-                    f"**Condition:** {doc.get('metadata', {}).get('condition', 'N/A')}"
-                )
+                # Show user-friendly metadata only
+                pmid = doc.get('metadata', {}).get('pmid', 'N/A')
+                if pmid != 'N/A':
+                    st.caption(f"PubMed ID: {pmid}")
+
+                condition = doc.get('metadata', {}).get('condition', '')
+                if condition:
+                    st.caption(f"Related to: {condition}")
+
                 st.divider()
                 st.write(doc["text"])
     else:
         st.info(
-            "No sources available yet. Ask a question in the Chat tab to retrieve medical information!"
+            "Ask a health question in the Chat tab to see the medical sources used for the answer."
         )
 
 # Footer
 st.divider()
-st.caption("Built with LangGraph, ChromaDB, and OpenAI | v2.0.0")
+st.caption("HealthBot — Evidence-Based Health Education | Always consult healthcare professionals for medical decisions")
