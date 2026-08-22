@@ -16,8 +16,8 @@ pillow>=10.0.0  # Force newer version with pre-built wheels
 pandas==2.2.2
 numpy==1.26.4
 
-# Note: biopython removed - caused Python 3.14 build issues
-# PubMed tool will work without it (uses direct HTTP)
+# PubMed API
+biopython==1.83
 
 # Search
 tavily-python==0.4.0
