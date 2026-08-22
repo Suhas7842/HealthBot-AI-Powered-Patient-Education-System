@@ -64,8 +64,11 @@ deployment/.serverless/
 .coverage
 htmlcov/
 
-# Evaluation cache
+# Evaluation cache and results
 evaluation_cache/
+evaluation_results/
+*.pkl
+threshold_validation_results.json
 
 # Ruff
 .ruff_cache/
