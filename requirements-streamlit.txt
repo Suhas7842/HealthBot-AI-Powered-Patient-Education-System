@@ -1,0 +1,35 @@
+# Streamlit-optimized requirements (smaller, faster deployment)
+
+# Core LangChain (minimal)
+langchain==0.2.16
+langchain-openai==0.1.23
+langchain-google-genai==1.0.10
+langchain-community==0.2.16
+langgraph==0.2.19
+
+# Vector Store (Pinecone only - no ChromaDB)
+pinecone-client>=3.0.0
+sentence-transformers==2.7.0
+
+# Data Processing (minimal)
+pandas==2.2.2
+numpy==1.26.4
+
+# Search
+tavily-python==0.4.0
+rank-bm25==0.2.2
+
+# LLM APIs
+google-generativeai>=0.3.0
+
+# Web Framework
+streamlit==1.35.0
+pydantic==2.7.4
+pydantic-settings==2.3.3
+
+# Utilities
+python-dotenv==1.0.1
+tenacity==8.4.1
+
+# Biopython for PubMed (if needed)
+biopython==1.83
