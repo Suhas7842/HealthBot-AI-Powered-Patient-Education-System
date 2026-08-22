@@ -278,7 +278,7 @@ with tab1:
 
                             # Show execution time
                             st.caption(
-                                f"⚡ Generated in {latency:.2f}s | Method: {results.get('method', 'unknown')}"
+                                f"⚡ Generated in {latency:.2f}s"
                             )
 
                         else:
