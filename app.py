@@ -17,7 +17,6 @@ from healthbot.prompts import (
 )
 from healthbot.safety import MEDICAL_DISCLAIMER, check_emergency, get_emergency_response
 from healthbot.schemas import MedicalSummary, QuizQuestion
-from healthbot.tools import ToolSelector
 
 # Page config
 st.set_page_config(
@@ -36,8 +35,6 @@ if "quiz" not in st.session_state:
     st.session_state.quiz = None
 if "metrics_tracker" not in st.session_state:
     st.session_state.metrics_tracker = HealthBotMetrics()
-if "tool_selector" not in st.session_state:
-    st.session_state.tool_selector = ToolSelector()
 if "llm_wrapper" not in st.session_state:
     st.session_state.llm_wrapper = LLMWrapper()
 
