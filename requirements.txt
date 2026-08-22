@@ -9,7 +9,8 @@ langgraph==0.2.19
 
 # Vector Store (Pinecone only - no ChromaDB)
 pinecone-client>=3.0.0
-sentence-transformers==2.7.0
+sentence-transformers==3.0.1
+pillow>=10.0.0  # Force newer version with pre-built wheels
 
 # Data Processing (minimal)
 pandas==2.2.2
