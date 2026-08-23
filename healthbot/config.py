@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # Google Gemini Configuration
     GOOGLE_API_KEY: str | None = None
-    GEMINI_MODEL: str = "gemini-2.0-flash"  # FREE tier, supports structured output
+    GEMINI_MODEL: str = "gemini-3.6-flash"  # FREE tier (1,500 req/day), supports structured output
 
     # Pinecone Cloud Vector DB
     PINECONE_API_KEY: str | None = None
