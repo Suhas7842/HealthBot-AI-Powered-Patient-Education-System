@@ -70,8 +70,6 @@ User → [Streamlit/FastAPI] → LangGraph Workflow
             [Response + Sources + Context]
 ```
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed diagrams.
-
 ---
 
 ## 🤖 What's New in v3.0.0 (Phase 4: GenAI Orchestration)
@@ -187,9 +185,6 @@ Free-tier LLM evaluation with persistent caching:
 - **Second run**: 0 LLM calls (evaluate cached traces)
 - **Key benefit**: Change evaluation metrics without new LLM calls
 - **Test coverage**: 17/17 free-tier tests passing
-
-**💡 Interview Story:**
-> "I built 4 custom tools and a GenAI agent that orchestrates them. The agent analyzes queries and decides which tools to call - it's not generating answers from training data, it's routing to MY infrastructure. For simple questions it uses single-tool retrieval. For complex research questions, it activates Research Mode which guides the agent to retrieve from multiple sources (local knowledge base + PubMed), compare evidence, and synthesize findings. The medical calculator proves it's not just a RAG wrapper - it's genuine tool orchestration."
 
 ---
 
