@@ -7,7 +7,7 @@
 
 A modular, extensible **GenAI Orchestration System** for medical education, powered by LangGraph, Pinecone, and Google Gemini. Features **LLM agent with tool calling**, enabling dynamic routing between custom tools (hybrid retriever, medical calculator, PubMed API, web search). The agent selects and orchestrates tools based on query analysis, demonstrating true GenAI engineering beyond single-purpose RAG.
 
-**📘 New to the project? Start here:** [**Getting Started Guide**](docs/GETTING_STARTED.md) - Step-by-step walkthrough for understanding the complete workflow
+**📘 New to the project? Start here:** [**Complete Documentation**](docs/HealthBot_Complete_Documentation.md) - Step-by-step walkthrough for understanding the complete workflow
 
 ---
 
@@ -196,18 +196,15 @@ Free-tier LLM evaluation with persistent caching:
 - **Master Evaluation Runner** - One-command orchestration of all evaluations ([run_all_evaluations.py](healthbot/evaluation/run_all_evaluations.py))
 - **Strategy Comparison Results** - Hybrid RRF: 0.329 Recall@5 at 320ms (best balance vs dense/BM25/reranked)
 - **Baseline Metrics Documented** - 100% retrieval success, 318ms avg latency on 50 test cases
-- **Evaluation Report** - Consolidated [EVALUATION_MASTER_REPORT.md](EVALUATION_MASTER_REPORT.md)
 
 ### Phase 3B: Empirical Threshold Tuning
 - **Threshold Validation** - Empirical validation of evidence gates: 100% pass rate on current thresholds
 - **Tuning Infrastructure** - Tests 60 combinations (4×5×3 matrix) to find optimal balance ([tune_thresholds.py](healthbot/evaluation/tune_thresholds.py))
-- **Justification Documentation** - Data-driven rationale in [THRESHOLD_JUSTIFICATION.md](docs/THRESHOLD_JUSTIFICATION.md)
 - **Key Finding** - MIN_AVG_SCORE=0.015 balances precision/recall with 100% pass rate
 
 ### Phase 3C: Adversarial Testing
 - **50+ Adversarial Tests** - Security, robustness, edge cases ([test_adversarial.py](tests/test_adversarial.py))
 - **Test Categories** - Prompt injection, citation manipulation, boundary conditions, input validation, out-of-domain queries
-- **Testing Guide** - Comprehensive strategy documentation ([TESTING_GUIDE.md](docs/TESTING_GUIDE.md))
 - **Total Coverage** - 222 unit tests with 100% pass rate on core functionality
 
 ### Quantitative Results (Phase 3)
@@ -234,7 +231,6 @@ Free-tier LLM evaluation with persistent caching:
 
 **Phase 2A: Production Readiness**
 - **Configurable Reranking** - Cross-encoder reranking available via `USE_RERANKER` setting (see Phase 3 experiments for measured latency/quality tradeoffs)
-- **Evaluation Consolidation** - Tiered evaluation guide ([EVALUATION_GUIDE.md](docs/EVALUATION_GUIDE.md)) with clear hierarchy (Tier 1: Primary, Tier 2: Specialized)
 
 ### Phase 2B: Intelligent Routing & Conversational AI
 - **Query Classification** - Fast pattern-based intent detection (INFORMATIONAL/DIAGNOSTIC/TREATMENT/PREVENTIVE) with complexity analysis (SIMPLE/MODERATE/COMPLEX)
@@ -359,8 +355,6 @@ The project includes a comprehensive evaluation infrastructure with **proper Inf
 - **10 conditions covered**: diabetes, hypertension, asthma, heart disease, arthritis, depression, migraine, COPD, obesity, thyroid
 - **Ground truth matching**: Condition-based document relevance for Recall@K, MRR, nDCG evaluation
 
-**📖 See [docs/EVALUATION_GUIDE.md](docs/EVALUATION_GUIDE.md) for comprehensive evaluation guidance**
-
 ### Quick Start Evaluation
 
 ```bash
@@ -384,9 +378,7 @@ python -m healthbot.evaluation.experiments
 | **Relevancy** | 0.85 - 0.92 | Answer addresses question |
 | **Latency** | 280-360ms | Reranker adds +2.1s on CPU (disabled by default) |
 
-*Results vary based on USE_RERANKER setting and LLM model. See [EVALUATION_GUIDE.md](docs/EVALUATION_GUIDE.md) for details.*
-
-See [EVALUATION_REPORT_50_CASE.md](EVALUATION_REPORT_50_CASE.md) for comprehensive analysis.
+*Results vary based on USE_RERANKER setting and LLM model.*
 
 **Metrics Tracked:**
 - Retrieval latency and success rate
@@ -426,10 +418,7 @@ healthbot/
 ├── app.py                           # Streamlit UI
 ├── api.py                           # FastAPI backend
 ├── docs/                            # Documentation
-│   ├── ARCHITECTURE.md              # System design
-│   ├── EVALUATION_GUIDE.md          # Evaluation tier hierarchy (Phase 2A)
-│   ├── HealthBot_Complete_Documentation.md
-│   └── IMPLEMENTATION_GUIDE.md
+│   └── HealthBot_Complete_Documentation.md  # Complete system documentation
 ├── requirements.txt
 ├── pyproject.toml
 └── README.md
@@ -561,7 +550,6 @@ python -m healthbot.evaluation.ragas_eval
 ```
 Measures: faithfulness, answer relevancy, context recall, context precision
 
-See [EVALUATION_REPORT.md](EVALUATION_REPORT.md) for detailed results and analysis.
 
 ---
 
@@ -581,19 +569,15 @@ docker-compose -f docker-compose.production.yml up --scale api=3
 ```
 
 ### Cloud Deployment
-- **Railway**: Deploy directly from GitHub (see DEPLOY.md)
+- **Railway**: Deploy directly from GitHub
 - **AWS ECS**: Stateless containers with auto-scaling
 - **Google Cloud Run**: Serverless container deployment
-
-See [DEPLOY.md](DEPLOY.md) for complete deployment guide.
 
 ---
 
 ## 📖 Documentation
 
-- **[Architecture](docs/ARCHITECTURE.md)** - System design and technical diagrams
-- **[Deployment Guide](DEPLOY.md)** - Production deployment instructions
-- **[Code Audit Summary](CODE_AUDIT_SUMMARY.md)** - Implementation verification report
+- **[Complete Documentation](docs/HealthBot_Complete_Documentation.md)** - Full system documentation and implementation guide
 
 ---
 
