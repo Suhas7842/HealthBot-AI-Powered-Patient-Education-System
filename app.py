@@ -120,6 +120,9 @@ with st.sidebar:
 
     st.divider()
 
+    # Performance note
+    st.info("💡 **Response Time:** Most queries complete in 3-10 seconds. During high traffic, some queries may take 20-60 seconds due to API rate limits.", icon="⏱️")
+
     # Help section
     with st.expander("💡 How to Use"):
         st.write("""
@@ -195,7 +198,7 @@ with tab1:
             # Generate response using GenAI agent
             with chat_container:
                 with st.chat_message("assistant"):
-                    with st.spinner("Analyzing your question..."):
+                    with st.spinner("🔍 Analyzing your question and searching medical sources... (this may take 10-60 seconds)"):
                         start_time = time.time()
 
                         # Use GenAI agent workflow
@@ -255,9 +258,15 @@ with tab1:
                             }
 
                         except Exception as e:
-                            error_msg = f"I encountered an issue processing your question. Please try rephrasing it."
-                            st.error(error_msg)
-                            st.caption(f"Error: {str(e)}")
+                            error_str = str(e)
+                            # Check if it's a rate limit error
+                            if "429" in error_str or "rate limit" in error_str.lower():
+                                error_msg = "⏳ High traffic detected. The system is experiencing rate limits. Please wait 30-60 seconds and try again."
+                                st.warning(error_msg)
+                            else:
+                                error_msg = "I encountered an issue processing your question. Please try rephrasing it."
+                                st.error(error_msg)
+                            st.caption(f"Technical details: {error_str[:200]}")
                             response_text = error_msg
 
                         st.session_state.messages.append(
